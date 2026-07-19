@@ -1187,23 +1187,30 @@
     // Фикс для смартфонов: спасаем данные при закрытии приложения или сворачивании
     window.addEventListener('beforeunload', saveDB);
     window.addEventListener('pagehide', saveDB);
-    // СУВЕРЕННЫЙ ГИТХАБ-МОСТ СИНХРОНИЗАЦИИ v9.7 (АБСОЛЮТНЫЙ ИММУНИТЕТ К БЛОКИРОВКАМ)
-    // ВНИМАНИЕ: Обязательно замени sakalnyasai-collab на СВОЙ ник гитхаба, если он отличается!
-    const GITHUB_DB_URL = 'https://githubusercontent.com';
+    // СУВЕРЕННЫЙ ОБЛАЧНЫЙ МОСТ v9.8 (АВТОМАТИЧЕСКИЙ СКВОЗНОЙ СТРИМИНГ)
+    const CLOUD_SYNC_URL = 'https://kvdb.io';
 
     async function pushBaseToCloud() {
-        // Метод локальной записи: на клиенте просто обновляем базу в памяти телефона
-        saveDB();
-        addSystemLogMessage("[LOCAL] Данные сохранены в реестр устройства.");
+        try {
+            const liveData = { users: globalUsers, hubs: globalHubs, messages: globalMessages, chats: userChats, sessions: activeSessionsList };
+            // Пушим обновленную структуру в выделенное приватное хранилище
+            await fetch(CLOUD_SYNC_URL, {
+                method: 'POST',
+                body: JSON.stringify(liveData),
+                headers: { 'Content-Type': 'application/json' }
+            });
+        } catch (e) { 
+            console.log("Ошибка отправки пакетов данных."); 
+        }
     }
 
     async function pullBaseFromCloud() {
         try {
-            // Скачиваем общую чистую базу данных напрямую из твоего репозитория GitHub
-            const response = await fetch(GITHUB_DB_URL);
+            const response = await fetch(CLOUD_SYNC_URL);
             if (response.ok) {
                 const cloudData = await response.json();
                 if (cloudData && cloudData.users) {
+                    // Сливаем актуальные слепки компов и смартфонов на лету
                     globalUsers = Object.assign({}, globalUsers, cloudData.users);
                     globalHubs = Object.assign({}, globalHubs, cloudData.hubs);
                     globalMessages = Object.assign({}, globalMessages, cloudData.messages);
@@ -1214,7 +1221,7 @@
                 }
             }
         } catch (e) { 
-            console.log("Синхронизация через локальное хранилище устройства."); 
+            console.log("Фолбэк на локальное хранилище."); 
         }
     }
 
