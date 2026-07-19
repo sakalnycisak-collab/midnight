@@ -1180,16 +1180,14 @@
     window.addEventListener('beforeunload', saveDB);
     window.addEventListener('pagehide', saveDB);
 
-    // СУВЕРЕННЫЙ ОБЛАЧНЫЙ МОСТ С АВТОМАТИЧЕСКИМ CORS-ПРОКСИ v9.9.5
-    const PROXY_CORS_URL = 'https://herokuapp.com';
+    // ОФИЦИАЛЬНЫЙ ОБЛАЧНЫЙ МОСТ v10.0 (ДЛЯ ЗАПУСКА НА VERCEL)
     const MONOLITH_NETWORK_URL = 'https://jsonbin.io';
     const MONOLITH_SECURITY_KEY = '$2a$10$vNclHwB97p77fQZq6FSmvO6.bN8wA7S.b7eLwA7S.b7eLwA7S.b7e';
 
     async function pushBaseToCloud() {
         try {
             const liveData = { users: globalUsers, hubs: globalHubs, messages: globalMessages, chats: userChats, sessions: activeSessionsList };
-            // Прокси-сервер сам наклеит разрешающие заголовки CORS для мобильного Chrome и Firefox
-            await fetch(PROXY_CORS_URL + MONOLITH_NETWORK_URL, {
+            await fetch(MONOLITH_NETWORK_URL, {
                 method: 'PUT',
                 body: JSON.stringify(liveData),
                 headers: { 
@@ -1204,7 +1202,7 @@
 
     async function pullBaseFromCloud() {
         try {
-            const response = await fetch(PROXY_CORS_URL + MONOLITH_NETWORK_URL, {
+            const response = await fetch(MONOLITH_NETWORK_URL, {
                 method: 'GET',
                 headers: { 'X-Master-Key': MONOLITH_SECURITY_KEY }
             });
