@@ -1180,24 +1180,31 @@
     window.addEventListener('beforeunload', saveDB);
     window.addEventListener('pagehide', saveDB);
 
-    // ОФИЦИАЛЬНЫЙ ОБЛАЧНЫЙ МОСТ СИНХРОНИЗАЦИИ v9.9 (ОТКРЫТЫЙ CORS ПАСПОРТ)
+    // СУВЕРЕННЫЙ ОБЛАЧНЫЙ МОСТ С АВТОМАТИЧЕСКИМ CORS-ПРОКСИ v9.9.5
+    const PROXY_CORS_URL = 'https://herokuapp.com';
     const MONOLITH_NETWORK_URL = 'https://jsonbin.io';
     const MONOLITH_SECURITY_KEY = '$2a$10$vNclHwB97p77fQZq6FSmvO6.bN8wA7S.b7eLwA7S.b7eLwA7S.b7e';
 
     async function pushBaseToCloud() {
         try {
             const liveData = { users: globalUsers, hubs: globalHubs, messages: globalMessages, chats: userChats, sessions: activeSessionsList };
-            await fetch(MONOLITH_NETWORK_URL, {
+            // Прокси-сервер сам наклеит разрешающие заголовки CORS для мобильного Chrome и Firefox
+            await fetch(PROXY_CORS_URL + MONOLITH_NETWORK_URL, {
                 method: 'PUT',
                 body: JSON.stringify(liveData),
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': MONOLITH_SECURITY_KEY }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': MONOLITH_SECURITY_KEY
+                }
             });
-        } catch (e) { console.log("Пакет сохранен локально."); }
+        } catch (e) { 
+            console.log("Пакет сохранен локально."); 
+        }
     }
 
     async function pullBaseFromCloud() {
         try {
-            const response = await fetch(MONOLITH_NETWORK_URL, {
+            const response = await fetch(PROXY_CORS_URL + MONOLITH_NETWORK_URL, {
                 method: 'GET',
                 headers: { 'X-Master-Key': MONOLITH_SECURITY_KEY }
             });
@@ -1208,11 +1215,15 @@
                     globalUsers = Object.assign({}, globalUsers, cloudData.users);
                     globalHubs = Object.assign({}, globalHubs, cloudData.hubs);
                     globalMessages = Object.assign({}, globalMessages, cloudData.messages);
-                    if (cloudData.sessions) { activeSessionsList = Array.from(new Set([...activeSessionsList, ...cloudData.sessions])); }
+                    if (cloudData.sessions) {
+                        activeSessionsList = Array.from(new Set([...activeSessionsList, ...cloudData.sessions]));
+                    }
                     saveDB();
                 }
             }
-        } catch (e) { console.log("Локальный фолбэк."); }
+        } catch (e) { 
+            console.log("Локальный фолбэк."); 
+        }
     }
 
     function addSystemLogMessage(text) {
