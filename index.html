@@ -1079,13 +1079,13 @@
     let midnightActiveModalType = null;
     let midnightActiveModalTargetUser = null;
 
-    // Сброс старого несовместимого кэша базы для чистого старта v9.0
+    // Сброс кэша старых несовместимых баз данных для чистого старта v9.0
     if (!localStorage.getItem('midnight_v9_phone_monolith')) {
         localStorage.clear();
         localStorage.setItem('midnight_v9_phone_monolith', 'true');
     }
 
-    // Инициализация базы данных: база стерильна, hacker777 вырезан
+    // Чистая база данных
     let globalUsers = JSON.parse(localStorage.getItem('midnight_users')) || {
         "admin": { pass: "1", name: "Founder", avatar: "", banned: false, hideOnline: false, doubloons: 5000, blacklist: {}, isVerified: true, isSponsor: true, isOwner: true, isStaff: true, isBot: false, aliases: ["ceo", "boss"] }
     };
@@ -1114,10 +1114,10 @@
         localStorage.setItem('midnight_sessions', JSON.stringify(activeSessionsList));
     }
     
-    // Фикс для смартфонов: спасаем данные при закрытии приложения или сворачивании
     window.addEventListener('beforeunload', saveDB);
     window.addEventListener('pagehide', saveDB);
-       // ПРОФЕССИОНАЛЬНЫЙ НЕУБИВАЕМЫЙ ОБЛАЧНЫЙ МОСТ v9.2
+
+    // ПРОФЕССИОНАЛЬНЫЙ НЕУБИВАЕМЫЙ ОБЛАЧНЫЙ МОСТ СИНХРОНИЗАЦИИ v9.2
     const CLOUD_SYNC_URL = 'https://jsonbin.io';
     const CLOUD_MASTER_KEY = '$2a$10$vNclHwB97p77fQZq6FSmvO6.bN8wA7S.b7eLwA7S.b7eLwA7S.b7e';
 
@@ -1125,7 +1125,7 @@
         try {
             const liveData = { users: globalUsers, hubs: globalHubs, messages: globalMessages, chats: userChats, sessions: activeSessionsList };
             await fetch(CLOUD_SYNC_URL, {
-                method: 'PUT', // jsonbin требует PUT для обновления сохраненной базы данных
+                method: 'PUT',
                 body: JSON.stringify(liveData),
                 headers: { 
                     'Content-Type': 'application/json',
@@ -1145,7 +1145,7 @@
             });
             if (response.ok) {
                 const resData = await response.json();
-                const cloudData = resData.record; // Извлекаем чистый JSON-слепок нашей базы
+                const cloudData = resData.record;
                 if (cloudData && cloudData.users) {
                     globalUsers = Object.assign({}, globalUsers, cloudData.users);
                     globalHubs = Object.assign({}, globalHubs, cloudData.hubs);
@@ -1164,8 +1164,6 @@
         const container = document.getElementById('midnight-logs-container-list');
         if (!container) return;
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        
-        // Вставляем лог в самое начало списка
         container.innerHTML = `<div class="notif-item-row">[${time}] ${text}</div>` + container.innerHTML;
     }
 
@@ -1177,6 +1175,7 @@
             panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
         }
     }
+
         const langData = {
         EN: {
             authIn: "Sign In to Midnight", authUp: "Create Profile",
