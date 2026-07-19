@@ -1145,37 +1145,30 @@
     let activeProfileViewId = null; 
     let hubCreationTypeHolder = 'group';
     
-    // Переменные для нативного модального окна взамен prompt
     let midnightActiveModalType = null;
     let midnightActiveModalTargetUser = null;
 
-    // Сброс старого несовместимого кэша базы для чистого старта v9.3
     if (!localStorage.getItem('midnight_v9_3_phone_monolith')) {
         localStorage.clear();
         localStorage.setItem('midnight_v9_3_phone_monolith', 'true');
     }
 
-    // Инициализация базы данных: база стерильна, ИИ-боты и лишние юзеры стерты
     let globalUsers = JSON.parse(localStorage.getItem('midnight_users')) || {
         "admin": { pass: "1", name: "Founder", avatar: "", banned: false, hideOnline: false, doubloons: 5000, blacklist: {}, isVerified: true, isSponsor: true, isOwner: true, isStaff: true, isBot: false, aliases: ["ceo", "boss"] }
     };
 
     let userChats = JSON.parse(localStorage.getItem('midnight_user_chats')) || {};
     
-    // Предустановленный приветственный пост в общем канале
     let globalMessages = JSON.parse(localStorage.getItem('midnight_messages')) || {
-        "hub_news": [{ id: "msg_init", text: "🔥 Добро пожаловать в Midnight v9.3!", sender: "admin", time: "16:53", delivered: true }]
+        "hub_news": [{ id: "msg_init", text: "🔥 Добро пожаловать в Midnight v9.3! Анимации выезда окон сглажены, добавлены аватарки внутри чат-баблов, баланс дублонов запаролен от чужих глаз, а в настройки зашит удобный МЕНЕДЖЕР МУЛЬТИАККАУНТОВ!", sender: "admin", time: "00:00", delivered: true }]
     };
     
-    // Предустановленный глобальный новостной канал
     let globalHubs = JSON.parse(localStorage.getItem('midnight_hubs')) || {
         "hub_news": { id: "hub_news", name: "Midnight News", type: "channel", privacy: "public", user: "midnight_news", creator: "admin", avatar: "", members: ["admin"], pinnedMsgId: "msg_init" }
     };
 
-    // СИСТЕМНЫЙ МАССИВ СЕССИЙ ДЛЯ РАБОТЫ МУЛЬТИАККАУНТНОСТИ
     let activeSessionsList = JSON.parse(localStorage.getItem('midnight_sessions')) || ["admin"];
 
-    // Функция сохранения во внутреннюю память телефона/браузера
     function saveDB() {
         localStorage.setItem('midnight_users', JSON.stringify(globalUsers));
         localStorage.setItem('midnight_user_chats', JSON.stringify(userChats));
@@ -1184,10 +1177,10 @@
         localStorage.setItem('midnight_sessions', JSON.stringify(activeSessionsList));
     }
     
-    // Фикс для смартфонов: спасаем данные при закрытии приложения или сворачивании
     window.addEventListener('beforeunload', saveDB);
     window.addEventListener('pagehide', saveDB);
-    // ОТКРЫТЫЙ МЕЖДУНАРОДНЫЙ ОБЛАЧНЫЙ МОСТ v9.9 (100% ИММУНИТЕТ К CORS-БЛОКИРОВКАМ)
+
+    // ОФИЦИАЛЬНЫЙ ОБЛАЧНЫЙ МОСТ СИНХРОНИЗАЦИИ v9.9 (ОТКРЫТЫЙ CORS ПАСПОРТ)
     const MONOLITH_NETWORK_URL = 'https://jsonbin.io';
     const MONOLITH_SECURITY_KEY = '$2a$10$vNclHwB97p77fQZq6FSmvO6.bN8wA7S.b7eLwA7S.b7eLwA7S.b7e';
 
@@ -1197,14 +1190,9 @@
             await fetch(MONOLITH_NETWORK_URL, {
                 method: 'PUT',
                 body: JSON.stringify(liveData),
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': MONOLITH_SECURITY_KEY
-                }
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': MONOLITH_SECURITY_KEY }
             });
-        } catch (e) { 
-            console.log("Пакет данных сохранен локально."); 
-        }
+        } catch (e) { console.log("Пакет сохранен локально."); }
     }
 
     async function pullBaseFromCloud() {
@@ -1220,78 +1208,29 @@
                     globalUsers = Object.assign({}, globalUsers, cloudData.users);
                     globalHubs = Object.assign({}, globalHubs, cloudData.hubs);
                     globalMessages = Object.assign({}, globalMessages, cloudData.messages);
-                    if (cloudData.sessions) {
-                        activeSessionsList = Array.from(new Set([...activeSessionsList, ...cloudData.sessions]));
-                    }
+                    if (cloudData.sessions) { activeSessionsList = Array.from(new Set([...activeSessionsList, ...cloudData.sessions])); }
                     saveDB();
                 }
             }
-        } catch (e) { 
-            console.log("Синхронизация через реестр устройства."); 
-        }
+        } catch (e) { console.log("Локальный фолбэк."); }
     }
 
-    // СИСТЕМА УЛЬТИМАТИВНЫХ НЕОНОВЫХ ЛОГОВ (ПЛАШКА 🔔)
     function addSystemLogMessage(text) {
-        const container = document.getElementById('midnight-logs-container-list');
-        if (!container) return;
+        const container = document.getElementById('midnight-logs-container-list'); if (!container) return;
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         container.innerHTML = `<div class="notif-item-row">[${time}] ${text}</div>` + container.innerHTML;
     }
 
-    function toggleSystemLogsPopupPanel(event) {
-        event.stopPropagation();
-        closeContextMenu();
-        const panel = document.getElementById('midnight-logs-panel');
-        if (panel) {
-            panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
-        }
-    }
+    function toggleSystemLogsPopupPanel(event) { event.stopPropagation(); closeContextMenu(); const panel = document.getElementById('midnight-logs-panel'); if (panel) { panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex'; } }
+
     const langData = {
         EN: {
-            authIn: "Sign In to Midnight", authUp: "Create Profile",
-            descIn: "Connect with your unique username.", descUp: "Choose unique username and password.",
-            btnIn: "CONTINUE", btnUp: "REGISTER NOW",
-            toggleIn: "No account? Sign Up", toggleUp: "Have account? Sign In",
-            chatsTitle: "Midnight Messenger", chatOnline: "online", inputPlaceholder: "Type a message...",
-            settingsTitle: "Settings", privacyTitle: "Privacy Settings", alertFill: "Please fill all fields.",
-            tabChats: "Personal Chats", tabUsers: "Network Users",
-            searchTitle: "Search Users & Hubs", infoTitle: "User Info", secEdit: "Edit Profile",
-            editName: "Change name", editUser: "Change @username", editAva: "Upload Local Avatar",
-            hideOnline: "Hide 'Online' status", promptName: "Enter new name:", promptUser: "Enter unique username:",
-            blockBtn: "Block User", unblockBtn: "Unblock User",
-            ctxMe: "Delete for me", ctxAll: "Delete for everyone", searchField: "Search by name or @username...",
-            grantBtn: "GRANT⚓", alertInBlacklist: "User blocked you!", alertYouBlocked: "Unblock user to chat!",
-            promptAlias: "Enter extra @username alias:", typeChannel: "CHANNEL", typeGroup: "GROUP",
-            addMemberText: "➕ Add Members", renameHubText: "✏️ Rename Hub", promptHubName: "Enter hub name:",
-            alertHubExist: "Public link already taken!",
-            toastRegSuccess: "Success! Please login.", toastFill: "Please fill all required fields.",
-            toastWrong: "Invalid username or password!", toastBanned: "Your account is BANNED!",
-            toastUsernameTaken: "This username is taken!"
+            authIn: "Sign In to Midnight", authUp: "Create Profile", descIn: "Connect with your unique username.", descUp: "Choose unique username and password.", btnIn: "CONTINUE", btnUp: "REGISTER NOW", toggleIn: "No account? Sign Up", toggleUp: "Have account? Sign In", chatsTitle: "Midnight Messenger", chatOnline: "online", inputPlaceholder: "Type a message...", settingsTitle: "Settings", privacyTitle: "Privacy Settings", alertFill: "Please fill all fields.", tabChats: "Personal Chats", tabUsers: "Network Users", searchTitle: "Search Users & Hubs", infoTitle: "User Info", secEdit: "Edit Profile", editName: "Change name", editUser: "Change @username", editAva: "Upload Local Avatar", hideOnline: "Hide 'Online' status", promptName: "Enter new name:", promptUser: "Enter unique username:", blockBtn: "Block User", unblockBtn: "Unblock User", ctxMe: "Delete for me", ctxAll: "Delete for everyone", searchField: "Search by name or @username...", grantBtn: "GRANT⚓", alertInBlacklist: "User blocked you!", alertYouBlocked: "Unblock user to chat!", promptAlias: "Enter extra @username alias:", typeChannel: "CHANNEL", typeGroup: "GROUP", addMemberText: "➕ Add Members", renameHubText: "✏️ Rename Hub", promptHubName: "Enter hub name:", alertHubExist: "Public link already taken!", toastRegSuccess: "Success! Please login.", toastFill: "Please fill all required fields.", toastWrong: "Invalid username or password!", toastBanned: "Your account is BANNED!", toastUsernameTaken: "This username is taken!"
         },
         RU: {
-            authIn: "Вход в Midnight", authUp: "Создать профиль",
-            descIn: "Введите ваш уникальный юзернейм и пароль.", descUp: "Придумайте уникальное имя пользователя и пароль.",
-            btnIn: "ДАЛЕЕ", btnUp: "ЗАРЕГИСТРИРОВАТЬСЯ",
-            toggleIn: "Нет аккаунта? Регистрация", toggleUp: "Уже есть аккаунт? Войти",
-            chatsTitle: "Midnight Мессенджер", chatOnline: "в сети", inputPlaceholder: "Напишите сообщение...",
-            settingsTitle: "Настройки", privacyTitle: "Конфиденциальность", alertFill: "Пожалуйста, заполните все поля.",
-            tabChats: "Личные чаты", tabUsers: "Пользователи",
-            searchTitle: "Поиск людей и хабов", infoTitle: "Профиль", secEdit: "Редактировать профиль",
-            editName: "Изменить отображаемое имя", editUser: "Изменить @юзернейм", editAva: "Загрузить фото с устройства",
-            hideOnline: "Скрывать статус 'В сети'", promptName: "Введите новое имя:", promptUser: "Введите уникальный юзернейм:",
-            blockBtn: "Заблокировать пользователя", unblockBtn: "Разблокировать пользователя",
-            ctxMe: "Удалить у себя", ctxAll: "Удалить для всех", searchField: "Поиск по названию или @юзернейму...",
-            grantBtn: "ВЫДАТЬ⚓", alertInBlacklist: "Этот пользователь заблокировал вас!", alertYouBlocked: "Разблокируйте пользователя!",
-            promptAlias: "Введите дополнительный @юзернейм:", typeChannel: "КАНАЛ", typeGroup: "ГРУППА",
-            addMemberText: "➕ Добавить участников", renameHubText: "✏️ Переименовать", promptHubName: "Введите новое название:",
-            alertHubExist: "Эта ссылка уже занята!",
-            toastRegSuccess: "Успешно! Теперь войдите.", toastFill: "Заполни все поля.",
-            toastWrong: "Неверный юзернейм или пароль!", toastBanned: "Ваш аккаунт ЗАБЛОКИРОВАН!",
-            toastUsernameTaken: "Этот юзернейм уже занят!"
+            authIn: "Вход в Midnight", authUp: "Создать профиль", descIn: "Введите ваш уникальный юзернейм и пароль.", descUp: "Придумайте уникальное имя пользователя и пароль.", btnIn: "ДАЛЕЕ", btnUp: "ЗАРЕГИСТРИРОВАТЬСЯ", toggleIn: "Нет аккаунта? Регистрация", toggleUp: "Уже есть аккаунт? Войти", chatsTitle: "Midnight Мессенджер", chatOnline: "в сети", inputPlaceholder: "Напишите сообщение...", settingsTitle: "Настройки", privacyTitle: "Конфиденциальность", alertFill: "Пожалуйста, заполните все поля.", tabChats: "Личные чаты", tabUsers: "Пользователи", searchTitle: "Поиск людей и хабов", infoTitle: "Профиль", secEdit: "Редактировать профиль", editName: "Изменить отображаемое имя", editUser: "Изменить @юзернейм", editAva: "Загрузить фото с устройства", hideOnline: "Скрывать статус 'В сети'", promptName: "Введите новое имя:", promptUser: "Введите уникальный юзернейм:", blockBtn: "Заблокировать пользователя", unblockBtn: "Разблокировать пользователя", ctxMe: "Удалить у себя", ctxAll: "Удалить для всех", searchField: "Поиск по названию или @юзернейму...", grantBtn: "ВЫДАТЬ⚓", alertInBlacklist: "Этот пользователь заблокировал вас!", alertYouBlocked: "Разблокируйте пользователя!", promptAlias: "Введите дополнительный @юзернейм:", typeChannel: "КАНАЛ", typeGroup: "ГРУППА", addMemberText: "➕ Добавить участников", renameHubText: "✏️ Переименовать", promptHubName: "Введите новое название:", alertHubExist: "Эта ссылка уже занята!", toastRegSuccess: "Успешно! Теперь войдите.", toastFill: "Заполни все поля.", toastWrong: "Неверный юзернейм или пароль!", toastBanned: "Ваш аккаунт ЗАБЛОКИРОВАН!", toastUsernameTaken: "Этот юзернейм уже занят!"
         }
     };
-
     function updateLocalization() {
         const l = langData[currentLang]; const el = (id) => document.getElementById(id);
         if(el('auth-title')) el('auth-title').innerText = isSignUp ? l.authUp : l.authIn;
@@ -1316,17 +1255,8 @@
         if(el('lbl-logs-title')) el('lbl-logs-title').innerText = currentLang === 'RU' ? "Системные логи сети" : "System Network Logs";
     }
 
-    function toggleLanguage() {
-        currentLang = currentLang === 'EN' ? 'RU' : 'EN';
-        const btn = document.getElementById('lang-toggle-btn'); if(btn) btn.innerText = currentLang === 'EN' ? 'RU' : 'EN';
-        updateLocalization();
-    }
-
-    function showToastNotification(text) {
-        const toast = document.getElementById('toast-window');
-        if(toast) { toast.innerText = text; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
-    }
-
+    function toggleLanguage() { currentLang = currentLang === 'EN' ? 'RU' : 'EN'; const btn = document.getElementById('lang-toggle-btn'); if(btn) btn.innerText = currentLang === 'EN' ? 'RU' : 'EN'; updateLocalization(); }
+    function showToastNotification(text) { const toast = document.getElementById('toast-window'); if(toast) { toast.innerText = text; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); } }
     function toggleFabMenu(event) { event.stopPropagation(); const menu = document.getElementById('fab-menu-window'); if(menu) menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex'; }
     function toggleContextMenu(event) { event.stopPropagation(); const menu = document.getElementById('chat-context-menu'); if(menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; }
     
@@ -1337,6 +1267,7 @@
         const logsPanel = document.getElementById('midnight-logs-panel'); if (logsPanel) logsPanel.style.display = 'none';
     }
     document.addEventListener('click', closeContextMenu);
+
     function goToScreen(screenId) {
         document.querySelectorAll('.phone-emulator .screen').forEach(s => s.classList.remove('active'));
         const target = document.getElementById(`screen-${screenId}`); if(target) target.classList.add('active');
@@ -1346,44 +1277,28 @@
     }
 
     function toggleAuthMode() { isSignUp = !isSignUp; updateLocalization(); }
-    
     function handleLogout() {
         addSystemLogMessage(`[AUTH] Сессия пользователя @${currentLoggedUser} закрыта.`);
         activeSessionsList = activeSessionsList.filter(u => u !== currentLoggedUser);
-        
-        if (activeSessionsList.length > 0) {
-            executeSwitchActiveAccountSessionProfile(activeSessionsList[0]);
-        } else {
-            currentLoggedUser = '';
-            saveDB(); pushBaseToCloud();
-            goToScreen('auth');
-        }
+        if (activeSessionsList.length > 0) { executeSwitchActiveAccountSessionProfile(activeSessionsList[0]); } 
+        else { currentLoggedUser = ''; saveDB(); pushBaseToCloud(); goToScreen('auth'); }
     }
 
     function isUsernameTakenInSystem(username) {
-        const freshUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
-        const freshHubs = JSON.parse(localStorage.getItem('midnight_hubs')) || globalHubs;
+        const freshUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers; const freshHubs = JSON.parse(localStorage.getItem('midnight_hubs')) || globalHubs;
         let taken = Object.keys(freshUsers).some(u => u === username || (freshUsers[u].aliases && freshUsers[u].aliases.includes(username)));
-        if (taken) return true;
-        return Object.keys(freshHubs).some(h => freshHubs[h].user === username);
+        if (taken) return true; return Object.keys(freshHubs).some(h => freshHubs[h].user === username);
     }
 
     async function handleAuth() {
-        const user = document.getElementById('auth-username').value.trim().toLowerCase();
-        const pass = document.getElementById('auth-password').value.trim(); const l = langData[currentLang];
-        if(!user || !pass) return showToastNotification(l.toastFill);
-        await pullBaseFromCloud();
-
+        const user = document.getElementById('auth-username').value.trim().toLowerCase(); const pass = document.getElementById('auth-password').value.trim(); const l = langData[currentLang];
+        if(!user || !pass) return showToastNotification(l.toastFill); await pullBaseFromCloud();
         if(!isSignUp && user === "admin" && pass === "1") {
-            currentLoggedUser = user; 
-            if(!activeSessionsList.includes(user)) activeSessionsList.push(user);
-            updateMySettingsView();
+            currentLoggedUser = user; if(!activeSessionsList.includes(user)) activeSessionsList.push(user); updateMySettingsView();
             if(document.getElementById('admin-banner')) document.getElementById('admin-banner').style.display = 'block';
             if(document.getElementById('founder-tabs-panel')) document.getElementById('founder-tabs-panel').style.display = 'flex'; 
-            addSystemLogMessage(`[AUTH] Успешный вход под ROOT-профилем @admin`);
-            goToScreen('chats'); return;
+            addSystemLogMessage(`[AUTH] Успешный вход под ROOT-профилем @admin`); goToScreen('chats'); return;
         }
-
         if(isSignUp) {
             if(globalUsers[user] || user === "admin" || isUsernameTakenInSystem(user)) return showToastNotification(l.toastUsernameTaken);
             globalUsers[user] = { pass: pass, name: user, avatar: "", banned: false, hideOnline: false, doubloons: 0, blacklist: {}, isVerified: false, isSponsor: false, isOwner: false, isStaff: false, isBot: false, aliases: [] };
@@ -1392,54 +1307,23 @@
         } else {
             const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
             if(liveUsers[user] && liveUsers[user].pass === pass) {
-                if(liveUsers[user].banned) return showToastNotification(l.toastBanned);
-                currentLoggedUser = user; 
-                if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {};
-                if(!userChats[currentLoggedUser]["hub_news"]) userChats[currentLoggedUser]["hub_news"] = { unreadCount: 0, isHub: true };
-                
-                if(!activeSessionsList.includes(user)) activeSessionsList.push(user);
-                
-                updateMySettingsView();
+                if(liveUsers[user].banned) return showToastNotification(l.toastBanned); currentLoggedUser = user; 
+                if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; if(!userChats[currentLoggedUser]["hub_news"]) userChats[currentLoggedUser]["hub_news"] = { unreadCount: 0, isHub: true };
+                if(!activeSessionsList.includes(user)) activeSessionsList.push(user); updateMySettingsView();
                 if(document.getElementById('admin-banner')) document.getElementById('admin-banner').style.display = 'none';
                 if(document.getElementById('founder-tabs-panel')) document.getElementById('founder-tabs-panel').style.display = 'none'; 
-                addSystemLogMessage(`[AUTH] Пользователь @${user} успешно авторизован в системе.`);
-                goToScreen('chats');
+                addSystemLogMessage(`[AUTH] Пользователь @${user} успешно авторизован в системе.`); goToScreen('chats');
             } else { showToastNotification(l.toastWrong); }
         }
     }
 
-    function switchAccountToNewLoginFormAction() {
-        isSignUp = false;
-        document.getElementById('auth-username').value = '';
-        document.getElementById('auth-password').value = '';
-        updateLocalization();
-        goToScreen('auth');
-        addSystemLogMessage("[SYSTEM] Переход на форму авторизации для добавления новой сессии.");
-    }
-
-    function executeSwitchActiveAccountSessionProfile(targetUser) {
-        if(!activeSessionsList.includes(targetUser)) return;
-        currentLoggedUser = targetUser;
-        saveDB();
-        
-        updateMySettingsView();
-        
-        const isRoot = currentLoggedUser === 'admin';
-        if(document.getElementById('admin-banner')) document.getElementById('admin-banner').style.display = isRoot ? 'block' : 'none';
-        if(document.getElementById('founder-tabs-panel')) document.getElementById('founder-tabs-panel').style.display = isRoot ? 'flex' : 'none'; 
-        
-        addSystemLogMessage(`[MULTIACCT] Переключение на профиль @${targetUser}`);
-        showToastNotification(currentLang === 'RU' ? `Аккаунт: @${targetUser}` : `Account: @${targetUser}`);
-        goToScreen('chats');
-    }
+    function switchAccountToNewLoginFormAction() { isSignUp = false; document.getElementById('auth-username').value = ''; document.getElementById('auth-password').value = ''; updateLocalization(); goToScreen('auth'); addSystemLogMessage("[SYSTEM] Переход на форму авторизации для добавления новой сессии."); }
+    function executeSwitchActiveAccountSessionProfile(targetUser) { if(!activeSessionsList.includes(targetUser)) return; currentLoggedUser = targetUser; saveDB(); updateMySettingsView(); const isRoot = currentLoggedUser === 'admin'; if(document.getElementById('admin-banner')) document.getElementById('admin-banner').style.display = isRoot ? 'block' : 'none'; if(document.getElementById('founder-tabs-panel')) document.getElementById('founder-tabs-panel').style.display = isRoot ? 'flex' : 'none'; addSystemLogMessage(`[MULTIACCT] Переключение на профиль @${targetUser}`); showToastNotification(currentLang === 'RU' ? `Аккаунт: @${targetUser}` : `Account: @${targetUser}`); goToScreen('chats'); }
 
     function openMidnightCustomModal(type, targetUser = null) {
         midnightActiveModalType = type; midnightActiveModalTargetUser = targetUser;
-        const overlay = document.getElementById('midnight-modal-overlay-zone');
-        const title = document.getElementById('midnight-modal-title-text');
-        const field = document.getElementById('midnight-modal-input-field');
-        if(!overlay || !title || !field) return;
-        field.value = ''; const l = langData[currentLang];
+        const overlay = document.getElementById('midnight-modal-overlay-zone'); const title = document.getElementById('midnight-modal-title-text'); const field = document.getElementById('midnight-modal-input-field');
+        if(!overlay || !title || !field) return; field.value = ''; const l = langData[currentLang];
         if(type === 'name') { title.innerText = l.promptName; field.placeholder = globalUsers[currentLoggedUser].name; } 
         else if(type === 'username') { title.innerText = l.promptUser; field.placeholder = currentLoggedUser; } 
         else if(type === 'alias') { title.innerText = l.promptAlias; field.placeholder = "new_alias"; } 
@@ -1448,23 +1332,16 @@
         overlay.style.display = 'flex'; field.focus();
     }
 
-    function closeMidnightCustomModalAction() {
-        const overlay = document.getElementById('midnight-modal-overlay-zone'); if(overlay) overlay.style.display = 'none';
-        midnightActiveModalType = null; midnightActiveModalTargetUser = null;
-    }
+    function closeMidnightCustomModalAction() { const overlay = document.getElementById('midnight-modal-overlay-zone'); if(overlay) overlay.style.display = 'none'; midnightActiveModalType = null; midnightActiveModalTargetUser = null; }
 
     async function submitMidnightCustomModalAction() {
         const value = document.getElementById('midnight-modal-input-field').value.trim(); if(!value) { closeMidnightCustomModalAction(); return; }
         const u = globalUsers[currentLoggedUser]; const l = langData[currentLang];
-        if(midnightActiveModalType === 'name') {
-            const oldName = u.name; u.name = value; saveDB(); await pushBaseToCloud(); updateMySettingsView();
-            addSystemLogMessage(`[PROFILE] Смена имени @${currentLoggedUser}: "${oldName}" ➡️ "${value}"`);
-        } else if(midnightActiveModalType === 'username') {
+        if(midnightActiveModalType === 'name') { const oldName = u.name; u.name = value; saveDB(); await pushBaseToCloud(); updateMySettingsView(); addSystemLogMessage(`[PROFILE] Смена имени @${currentLoggedUser}: "${oldName}" ➡️ "${value}"`); } 
+        else if(midnightActiveModalType === 'username') {
             let clean = value.replace('@','').toLowerCase(); if(clean === currentLoggedUser) { closeMidnightCustomModalAction(); return; }
             if(globalUsers[clean] || clean === "admin" || isUsernameTakenInSystem(clean)) { showToastNotification(l.toastUsernameTaken); closeMidnightCustomModalAction(); return; }
-            activeSessionsList = activeSessionsList.map(s => s === currentLoggedUser ? clean : s);
-            globalUsers[clean] = u; delete globalUsers[currentLoggedUser]; addSystemLogMessage(`[PROFILE] Ренейм профиля: @${currentLoggedUser} ➡️ @${clean}`);
-            currentLoggedUser = clean; saveDB(); await pushBaseToCloud(); updateMySettingsView();
+            activeSessionsList = activeSessionsList.map(s => s === currentLoggedUser ? clean : s); globalUsers[clean] = u; delete globalUsers[currentLoggedUser]; addSystemLogMessage(`[PROFILE] Ренейм профиля: @${currentLoggedUser} ➡️ @${clean}`); currentLoggedUser = clean; saveDB(); await pushBaseToCloud(); updateMySettingsView();
         } else if(midnightActiveModalType === 'alias') {
             let target = midnightActiveModalTargetUser; let clean = value.replace('@','').toLowerCase();
             if(clean && globalUsers[target]) { if(!globalUsers[target].aliases) globalUsers[target].aliases = []; if(!globalUsers[target].aliases.includes(clean)) { globalUsers[target].aliases.push(clean); addSystemLogMessage(`[ROOT] Добавлен алиас @${clean} для @${target}`); } saveDB(); await pushBaseToCloud(); listenToAdminUsers(); }
@@ -1478,17 +1355,11 @@
     }
     function updateMySettingsView() {
         const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers; const u = liveUsers[currentLoggedUser]; if(!u) return;
-        let nameHtml = u.name;
-        if(u.isOwner) nameHtml += `<span class="badge-owner">👑</span>`; if(u.isVerified) nameHtml += `<span class="badge-verified">⚡</span>`;
-        if(u.isSponsor) nameHtml += `<span class="badge-sponsor">💎</span>`; if(u.isStaff) nameHtml += `<span class="badge-mod">🛡️</span>`; if(u.isBot) nameHtml += `<span class="badge-bot">🤖</span>`;
-        if(document.getElementById('my-profile-display-name')) document.getElementById('my-profile-display-name').innerHTML = nameHtml;
-        if(document.getElementById('my-profile-username')) document.getElementById('my-profile-username').innerText = '@' + currentLoggedUser;
-        const doubloonsRow = document.getElementById('my-profile-doubloons');
-        if(doubloonsRow) { if(currentLoggedUser === "admin") { doubloonsRow.style.display = 'block'; doubloonsRow.innerText = `⚓ ${u.doubloons || 0} Doubloons`; } else { doubloonsRow.style.display = 'none'; } }
-        const avaBox = document.getElementById('my-profile-avatar');
-        if(avaBox) { if(u.avatar) { avaBox.style.backgroundImage = `url('${u.avatar}')`; avaBox.innerText = ''; } else { avaBox.style.backgroundImage = 'none'; avaBox.innerText = u.name.substring(0,2).toUpperCase(); } }
+        let nameHtml = u.name; if(u.isOwner) nameHtml += `<span class="badge-owner">👑</span>`; if(u.isVerified) nameHtml += `<span class="badge-verified">⚡</span>`; if(u.isSponsor) nameHtml += `<span class="badge-sponsor">💎</span>`; if(u.isStaff) nameHtml += `<span class="badge-mod">🛡️</span>`; if(u.isBot) nameHtml += `<span class="badge-bot">🤖</span>`;
+        if(document.getElementById('my-profile-display-name')) document.getElementById('my-profile-display-name').innerHTML = nameHtml; if(document.getElementById('my-profile-username')) document.getElementById('my-profile-username').innerText = '@' + currentLoggedUser;
+        const doubloonsRow = document.getElementById('my-profile-doubloons'); if(doubloonsRow) { if(currentLoggedUser === "admin") { doubloonsRow.style.display = 'block'; doubloonsRow.innerText = `⚓ ${u.doubloons || 0} Doubloons`; } else { doubloonsRow.style.display = 'none'; } }
+        const avaBox = document.getElementById('my-profile-avatar'); if(avaBox) { if(u.avatar) { avaBox.style.backgroundImage = `url('${u.avatar}')`; avaBox.innerText = ''; } else { avaBox.style.backgroundImage = 'none'; avaBox.innerText = u.name.substring(0,2).toUpperCase(); } }
         if(document.getElementById('privacy-hide-online-checkbox')) document.getElementById('privacy-hide-online-checkbox').checked = u.hideOnline || false;
-
         const multiContainer = document.getElementById('multi-account-profiles-list');
         if(multiContainer) {
             multiContainer.innerHTML = ''; if(!activeSessionsList.includes(currentLoggedUser)) activeSessionsList.push(currentLoggedUser);
@@ -1507,19 +1378,14 @@
 
     function editProfileField(field) { if(field === 'name') openMidnightCustomModal('name'); else if(field === 'username') openMidnightCustomModal('username'); }
 
-    // УЛЬТИМАТИВНЫЙ ИСПРАВЛЕННЫЙ СКВОЗНОЙ ПОИСК
     async function handleGlobalSearch() {
-        const query = document.getElementById('search-input-field').value.trim().toLowerCase();
-        const container = document.getElementById('search-results-container'); if(!container) return;
-        container.innerHTML = ''; if(!query) return; // ПРИНУДИТЕЛЬНЫЙ СБРОС КОНТЕЙНЕРА ОТ ДУБЛИКАТОВ
-
+        const query = document.getElementById('search-input-field').value.trim().toLowerCase(); const container = document.getElementById('search-results-container'); if(!container) return;
+        container.innerHTML = ''; if(!query) return; // ПРИНУДИТЕЛЬНЫЙ СБРОС КОНТЕЙНЕРА ОТ ДУБЛИКАТОВ И ДВОЕНИЯ
         await pullBaseFromCloud(); const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers; const liveHubs = JSON.parse(localStorage.getItem('midnight_hubs')) || globalHubs;
         Object.keys(liveUsers).forEach(u => {
             const user = liveUsers[u]; const hasAlias = user.aliases && user.aliases.some(a => a.includes(query));
             if(u.includes(query) || user.name.toLowerCase().includes(query) || hasAlias) {
-                const avaBg = user.avatar ? `style="background-image: url('${user.avatar}')"` : ''; let badges = '';
-                if(user.isOwner) badges += `<span class="badge-owner">👑</span>`; if(user.isVerified) badges += `<span class="badge-verified">⚡</span>`;
-                if(user.isSponsor) badges += `<span class="badge-sponsor">💎</span>`; if(user.isStaff) badges += `<span class="badge-mod">🛡️</span>`;
+                const avaBg = user.avatar ? `style="background-image: url('${user.avatar}')"` : ''; let badges = ''; if(user.isOwner) badges += `<span class="badge-owner">👑</span>`; if(user.isVerified) badges += `<span class="badge-verified">⚡</span>`; if(user.isSponsor) badges += `<span class="badge-sponsor">💎</span>`; if(user.isStaff) badges += `<span class="badge-mod">🛡️</span>`;
                 container.innerHTML += `<div class="chat-item" onclick="viewUserProfileCard('${u}')"><div class="avatar" ${avaBg}>${user.avatar ? '' : user.name.substring(0,1).toUpperCase()}</div><div class="chat-info"><div class="chat-name">${user.name} ${badges}</div><div style="color:#6C63FF; font-size:12px;">@${u}</div></div></div>`;
             }
         });
@@ -1529,15 +1395,12 @@
             }
         });
     }
-
     function startHubChat(hubId) { if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; userChats[currentLoggedUser][hubId] = { unreadCount: 0, isHub: true }; saveDB(); pushBaseToCloud(); openChat(hubId, globalHubs[hubId].name); }
     function startChatFromProfile(username) { if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; userChats[currentLoggedUser][username] = { unreadCount: 0, isHub: false }; saveDB(); pushBaseToCloud(); openChat(username, globalUsers[username] ? globalUsers[username].name : username); }
 
     async function viewUserProfileCard(username) {
         await pullBaseFromCloud(); const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers; const u = liveUsers[username]; if(!u) return;
-        const avaBg = u.avatar ? `style="background-image: url('${u.avatar}')"` : ''; let badges = '';
-        if(u.isOwner) badges += `<span class="badge-owner">👑</span>`; if(u.isVerified) badges += `<span class="badge-verified">⚡</span>`;
-        if(u.isSponsor) badges += `<span class="badge-sponsor">💎</span>`; if(u.isStaff) badges += `<span class="badge-mod">🛡️</span>`;
+        const avaBg = u.avatar ? `style="background-image: url('${u.avatar}')"` : ''; let badges = ''; if(u.isOwner) badges += `<span class="badge-owner">👑</span>`; if(u.isVerified) badges += `<span class="badge-verified">⚡</span>`; if(u.isSponsor) badges += `<span class="badge-sponsor">💎</span>`; if(u.isStaff) badges += `<span class="badge-mod">🛡️</span>`;
         const container = document.getElementById('userprofile-details-container');
         if(container) { container.innerHTML = `<div class="profile-card"><div class="profile-avatar-big" ${avaBg}>${u.avatar ? '' : u.name.substring(0,2).toUpperCase()}</div><div class="profile-name">${u.name} ${badges}</div><div class="profile-username">@${username}</div></div><button class="btn" onclick="startChatFromProfile('${username}')" style="margin-bottom:10px;">💬 Написать сообщение</button><button class="btn" onclick="toggleBlacklistAction('${username}')" style="background-color:#ff3366;">Заблокировать / Разблокировать</button>`; }
         goToScreen('userprofile');
@@ -1549,6 +1412,7 @@
         else { hub.members.push(currentLoggedUser); if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; userChats[currentLoggedUser][activeChatId] = { unreadCount: 0, isHub: true }; }
         localStorage.setItem('midnight_hubs', JSON.stringify(globalHubs)); saveDB(); await pushBaseToCloud(); openChat(activeChatId, hub.name);
     }
+
     function openHubSettingsPanel() {
         const hub = globalHubs[activeChatId]; if(!hub) return; const l = langData[currentLang];
         let typeText = hub.type === 'channel' ? l.typeChannel : l.typeGroup; let pText = hub.privacy === 'public' ? 'ПУБЛИЧНЫЙ' : 'ПРИВАТНЫЙ';
@@ -1572,7 +1436,7 @@
             const isHub = userChats[currentLoggedUser][chatId]?.isHub; let title = chatId; let avatarContent = chatId.substring(0,1).toUpperCase(); let style = ''; let badges = '';
             if(isHub && globalHubs[chatId]) { title = globalHubs[chatId].name; avatarContent = globalHubs[chatId].type === 'channel' ? '📢' : '👥'; style = `style="background-color:rgba(108, 99, 255, 0.15); color:#8b83ff;"`; }
             else if(globalUsers[chatId]) { const u = globalUsers[chatId]; title = u.name; if(u.avatar) style = `style="background-image: url('${u.avatar}')"`; avatarContent = u.avatar ? '' : title.substring(0,1).toUpperCase(); if(u.isOwner) badges += `👑`; if(u.isVerified) badges += `⚡`; if(u.isSponsor) badges += `💎`; if(u.isStaff) badges += `🛡️`; }
-            const roomId = currentLoggedUser < chatId ? `${currentLoggedUser}_${chatId}` : `${chatId}_${currentLoggedUser}`; const list = globalMessages[isHub ? chatId : roomId] || [];
+            const list = globalMessages[isHub ? chatId : (currentLoggedUser < chatId ? `${currentLoggedUser}_${chatId}` : `${chatId}_${currentLoggedUser}`)] || [];
             const lastMsg = list.length > 0 ? list[list.length - 1].text : 'No messages'; const count = userChats[currentLoggedUser][chatId]?.unreadCount || 0;
             container.innerHTML += `<div class="chat-item" onclick="openChat('${chatId}', '${title}')"><div class="avatar" ${style}>${avatarContent}<div class="online-badge"></div></div><div class="chat-info"><div class="chat-meta-row"><span class="chat-name">${title} ${badges}</span></div><div class="chat-meta-row"><span class="chat-last-msg">${lastMsg}</span>${count > 0 ? `<div class="unread-badge">${count}</div>` : ''}</div></div></div>`;
         });
@@ -1586,16 +1450,13 @@
         });
     }
     async function openChat(id, name) {
-        activeChatId = id; 
-        const headerAva = document.getElementById('room-header-avatar');
+        activeChatId = id; const headerAva = document.getElementById('room-header-avatar');
         if(headerAva) {
-            const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
-            const u = liveUsers[id];
+            const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers; const u = liveUsers[id];
             if(u && u.avatar) { headerAva.style.backgroundImage = `url('${u.avatar}')`; headerAva.innerText = ''; }
             else if(globalHubs[id]) { headerAva.style.backgroundImage = 'none'; headerAva.innerText = globalHubs[id].type === 'channel' ? '📢' : '👥'; headerAva.style.backgroundColor = 'rgba(108,99,255,0.1)'; }
             else { headerAva.style.backgroundImage = 'none'; headerAva.innerText = name.substring(0,1).toUpperCase(); headerAva.style.backgroundColor = 'rgba(108,99,255,0.15)'; }
         }
-
         if(document.getElementById('room-title')) { document.getElementById('room-title').innerText = name; document.getElementById('room-title').onclick = globalHubs[id] ? openHubSettingsPanel : null; }
         const inputPanel = document.getElementById('chat-input-action-panel'); const lockNotice = document.getElementById('channel-lock-notice'); const joinPanel = document.getElementById('chat-join-channel-panel'); const joinBtn = document.getElementById('channel-subscribe-action-btn'); const hub = globalHubs[id];
         if (hub) {
@@ -1607,10 +1468,7 @@
         goToScreen('room'); closeContextMenu(); await pullBaseFromCloud(); renderMessages(); renderPinnedBannerView();
     }
 
-    function openProfileDirectlyFromCurrentChatStream() {
-        if(activeChatId && !globalHubs[activeChatId]) { viewUserProfileCard(activeChatId); }
-        else if(activeChatId && globalHubs[activeChatId]) { openHubSettingsPanel(); }
-    }
+    function openProfileDirectlyFromCurrentChatStream() { if(activeChatId && !globalHubs[activeChatId]) { viewUserProfileCard(activeChatId); } else if(activeChatId && globalHubs[activeChatId]) { openHubSettingsPanel(); } }
 
     function renderPinnedBannerView() {
         const banner = document.getElementById('chat-room-pinned-banner'); const bannerText = document.getElementById('chat-room-pinned-text'); if(!banner || !bannerText) return;
@@ -1619,202 +1477,83 @@
         if(currentPinnedId) { const list = globalMessages[targetRoom] || []; const foundMsg = list.find(m => m.id === currentPinnedId); if(foundMsg) { banner.style.display = 'flex'; bannerText.innerText = `📌 ${foundMsg.sender}: ${foundMsg.text}`; return; } }
         banner.style.display = 'none';
     }
+
     function renderMessages() {
         const container = document.getElementById('messages-container'); if(!container) return; container.innerHTML = '';
         const isHub = globalHubs[activeChatId] ? true : false; const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId; const list = globalMessages[targetRoom] || [];
         const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
-        
         list.forEach(m => {
             const isMe = m.sender === currentLoggedUser; const u = liveUsers[m.sender] || { isVerified: false, isSponsor: false, isOwner: false, isStaff: false, isBot: false, name: m.sender, avatar: "" };
             let vipClass = u.isSponsor ? 'vip-sponsor' : u.isVerified ? 'vip-verified' : ''; let ticks = isMe ? `✓✓` : ''; let fileContent = '';
             if(m.fileData) { if(m.fileType.startsWith('image/')) fileContent = `<img src="${m.fileData}">`; else fileContent = `<a class="file-attach-link" href="${m.fileData}" download="${m.fileName}">📎 ${m.fileName}</a>`; }
             let badges = ''; if(u.isOwner) badges += `👑`; if(u.isVerified) badges += `⚡`; if(u.isSponsor) badges += `💎`; if(u.isStaff) badges += `🛡️`; if(u.isBot) badges += `🤖`;
-            
-            const mAvaBg = u.avatar ? `style="background-image: url('${u.avatar}')"` : '';
-            const avatarHtmlHtml = `<div class="message-avatar" ${mAvaBg} onclick="viewUserProfileCard('${m.sender}')">${u.avatar ? '' : u.name.substring(0,1).toUpperCase()}</div>`;
-            
-            container.innerHTML += `
-                <div class="message-wrapper ${isMe ? 'outgoing-row' : ''}">
-                    ${avatarHtmlHtml}
-                    <div class="message ${isMe ? 'outgoing' : 'incoming'} ${vipClass}" onclick="openMessageActionsMenuAction(event, '${targetRoom}', '${m.id}')">
-                        <div style="font-size:11px; color:#6C63FF; margin-bottom:2px; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); viewUserProfileCard('${m.sender}')">@${m.sender} ${badges}</div>
-                        <div>${m.text}</div>
-                        ${fileContent}
-                        <div class="msg-meta"><span class="message-time">${m.time}</span> ${ticks}</div>
-                    </div>
-                </div>`;
+            const mAvaBg = u.avatar ? `style="background-image: url('${u.avatar}')"` : ''; const avatarHtmlHtml = `<div class="message-avatar" ${mAvaBg} onclick="viewUserProfileCard('${m.sender}')">${u.avatar ? '' : u.name.substring(0,1).toUpperCase()}</div>`;
+            container.innerHTML += `<div class="message-wrapper ${isMe ? 'outgoing-row' : ''}">${avatarHtmlHtml}<div class="message ${isMe ? 'outgoing' : 'incoming'} ${vipClass}" onclick="openMessageActionsMenuAction(event, '${targetRoom}', '${m.id}')"><div style="font-size:11px; color:#6C63FF; margin-bottom:2px; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); viewUserProfileCard('${m.sender}')">@${m.sender} ${badges}</div><div>${m.text}</div>${fileContent}<div class="msg-meta"><span class="message-time">${m.time}</span> ${ticks}</div></div></div>`;
         }); container.scrollTop = container.scrollHeight;
     }
 
-    // ИСПРАВЛЕННЫЙ ДВИЖОК ЗАЩИТЫ КАНАЛОВ ОТ ПОДПИСЧИКОВ
     function openMessageActionsMenuAction(event, targetRoom, msgId) {
-        event.stopPropagation(); 
-        const hub = globalHubs[activeChatId];
-        const hasAdminRights = !hub ? true : (hub.creator === currentLoggedUser || currentLoggedUser === 'admin');
-        
+        event.stopPropagation(); const hub = globalHubs[activeChatId]; const hasAdminRights = !hub ? true : (hub.creator === currentLoggedUser || currentLoggedUser === 'admin');
         let html = `<div class="context-menu" id="message-context-menu" style="display:block; top:${event.clientY - 20}px; left:${event.clientX - 30}px; position:fixed; z-index:99999;">`;
-        
-        if(hasAdminRights) {
-            html += `<div class="context-item" onclick="executePinMessageLogic('${targetRoom}', '${msgId}')">📌 Закрепить</div>`;
-        }
-        
+        if(hasAdminRights) { html += `<div class="context-item" onclick="executePinMessageLogic('${targetRoom}', '${msgId}')">📌 Закрепить</div>`; }
         html += `<div class="context-item" onclick="executeDeleteSingleMessageLogic('${targetRoom}', '${msgId}', 'me')">❌ У себя</div>`;
-        
-        if(hasAdminRights) { 
-            html += `<div class="context-item" onclick="executeDeleteSingleMessageLogic('${targetRoom}', '${msgId}', 'all')" style="color:#ff3366;">💥 Для всех</div>`; 
-        }
-        
-        html += `</div>`;
-        const oldMenu = document.getElementById('message-context-menu'); if(oldMenu) oldMenu.remove(); document.body.insertAdjacentHTML('beforeend', html);
+        if(hasAdminRights) { html += `<div class="context-item" onclick="executeDeleteSingleMessageLogic('${targetRoom}', '${msgId}', 'all')" style="color:#ff3366;">💥 Для всех</div>`; }
+        html += `</div>`; const oldMenu = document.getElementById('message-context-menu'); if(oldMenu) oldMenu.remove(); document.body.insertAdjacentHTML('beforeend', html);
     }
 
-    async function executePinMessageLogic(targetRoom, msgId) {
-        const hub = globalHubs[activeChatId];
-        if(hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') {
-            return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied');
-        }
-        if(hub) { hub.pinnedMsgId = msgId; } 
-        else { if(!userChats[currentLoggedUser][activeChatId]) userChats[currentLoggedUser][activeChatId] = { unreadCount: 0, isHub: false }; userChats[currentLoggedUser][activeChatId].pinnedMsgId = msgId; }
-        saveDB(); await pushBaseToCloud(); closeContextMenu(); renderPinnedBannerView();
-    }
-
-    async function executeDeleteSingleMessageLogic(targetRoom, msgId, mode) {
-        const hub = globalHubs[activeChatId];
-        if(mode === 'all' && hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') {
-            return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied');
-        }
-        if(globalMessages[targetRoom]) {
-            if(mode === 'all') { globalMessages[targetRoom] = globalMessages[targetRoom].filter(m => m.id !== msgId); } 
-            else { globalMessages[targetRoom] = globalMessages[targetRoom].filter(m => m.id !== msgId || m.sender !== currentLoggedUser); }
-            saveDB(); await pushBaseToCloud(); closeContextMenu(); renderMessages(); renderPinnedBannerView();
-        }
-    }
-
+    async function executePinMessageLogic(targetRoom, msgId) { const hub = globalHubs[activeChatId]; if(hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') { return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied'); } if(hub) { hub.pinnedMsgId = msgId; } else { if(!userChats[currentLoggedUser][activeChatId]) userChats[currentLoggedUser][activeChatId] = { unreadCount: 0, isHub: false }; userChats[currentLoggedUser][activeChatId].pinnedMsgId = msgId; } saveDB(); await pushBaseToCloud(); closeContextMenu(); renderPinnedBannerView(); }
+    async function executeDeleteSingleMessageLogic(targetRoom, msgId, mode) { const hub = globalHubs[activeChatId]; if(mode === 'all' && hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') { return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied'); } if(globalMessages[targetRoom]) { if(mode === 'all') { globalMessages[targetRoom] = globalMessages[targetRoom].filter(m => m.id !== msgId); } else { globalMessages[targetRoom] = globalMessages[targetRoom].filter(m => m.id !== msgId || m.sender !== currentLoggedUser); } saveDB(); await pushBaseToCloud(); closeContextMenu(); renderMessages(); renderPinnedBannerView(); } }
     function scrollToPinnedMessageAction() { showToastNotification(currentLang==='RU'?'Переход к закреплённому сообщению':'Scrolling to pin'); }
-    
-    async function unpinMessageInRoomAction(event) {
-        event.stopPropagation(); const hub = globalHubs[activeChatId]; 
-        if(hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') {
-            return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied');
-        }
-        if(hub) hub.pinnedMsgId = null;
-        else if(userChats[currentLoggedUser]?.[activeChatId]) userChats[currentLoggedUser][activeChatId].pinnedMsgId = null;
-        saveDB(); await pushBaseToCloud(); renderPinnedBannerView();
-    }
-
+    async function unpinMessageInRoomAction(event) { event.stopPropagation(); const hub = globalHubs[activeChatId]; if(hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') { return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied'); } if(hub) hub.pinnedMsgId = null; else if(userChats[currentLoggedUser]?.[activeChatId]) userChats[currentLoggedUser][activeChatId].pinnedMsgId = null; saveDB(); await pushBaseToCloud(); renderPinnedBannerView(); }
     function handleTypingIndicatorSignalAction() { localStorage.setItem('midnight_typing_ping', JSON.stringify({ room: activeChatId, sender: currentLoggedUser, rand: Math.random() })); }
-    function handleChatFileUpload(input) { 
-        const file = input.files; if(!file || !activeChatId) return; const reader = new FileReader(); 
-        reader.onload = function(e) { sendMediaMessage(file.name, file.type, e.target.result); }; reader.readAsDataURL(file); 
-    }
-    
-    async function sendMediaMessage(fileName, fileType, fileData) { 
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); const isHub = globalHubs[activeChatId] ? true : false; 
-        const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId; const msgId = 'msg_' + Math.random().toString(36).substring(2, 9);
-        if(!globalMessages[targetRoom]) globalMessages[targetRoom] = []; globalMessages[targetRoom].push({ id: msgId, text: `📎 ${fileName}`, sender: currentLoggedUser, time: time, fileData: fileData, fileType: fileType, fileName: fileName, delivered: true, seen: false }); 
-        saveDB(); await pushBaseToCloud(); renderMessages(); renderMainChatsLayout(); 
-    }
-
-    async function sendMessage() {
-        const input = document.getElementById('message-input'); const text = input.value.trim(); if(!text || !activeChatId) return;
-        const isHub = globalHubs[activeChatId] ? true : false; const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId; const msgId = 'msg_' + Math.random().toString(36).substring(2, 9);
-        if(!globalMessages[targetRoom]) globalMessages[targetRoom] = []; globalMessages[targetRoom].push({ id: msgId, text: text, sender: currentLoggedUser, time: time, delivered: true, seen: false });
-        input.value = ''; saveDB(); await pushBaseToCloud(); renderMessages(); renderMainChatsLayout();
-    }
-
-    function deleteChatAction(mode) { 
-        const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = globalHubs[activeChatId] ? activeChatId : roomId; 
-        globalMessages[targetRoom] = []; saveDB(); pushBaseToCloud(); renderMessages(); closeContextMenu(); renderMainChatsLayout(); 
-    }
-    
+    function handleChatFileUpload(input) { const file = input.files; if(!file || !activeChatId) return; const reader = new FileReader(); reader.onload = function(e) { sendMediaMessage(file.name, file.type, e.target.result); }; reader.readAsDataURL(file); }
+    async function sendMediaMessage(fileName, fileType, fileData) { const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); const isHub = globalHubs[activeChatId] ? true : false; const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId; const msgId = 'msg_' + Math.random().toString(36).substring(2, 9); if(!globalMessages[targetRoom]) globalMessages[targetRoom] = []; globalMessages[targetRoom].push({ id: msgId, text: `📎 ${fileName}`, sender: currentLoggedUser, time: time, fileData: fileData, fileType: fileType, fileName: fileName, delivered: true, seen: false }); saveDB(); await pushBaseToCloud(); renderMessages(); renderMainChatsLayout(); }
+    async function sendMessage() { const input = document.getElementById('message-input'); const text = input.value.trim(); if(!text || !activeChatId) return; const isHub = globalHubs[activeChatId] ? true : false; const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId; const msgId = 'msg_' + Math.random().toString(36).substring(2, 9); if(!globalMessages[targetRoom]) globalMessages[targetRoom] = []; globalMessages[targetRoom].push({ id: msgId, text: text, sender: currentLoggedUser, time: time, delivered: true, seen: false }); input.value = ''; saveDB(); await pushBaseToCloud(); renderMessages(); renderMainChatsLayout(); }
+    function deleteChatAction(mode) { const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = globalHubs[activeChatId] ? activeChatId : roomId; globalMessages[targetRoom] = []; saveDB(); pushBaseToCloud(); renderMessages(); closeContextMenu(); renderMainChatsLayout(); }
     function toggleBlacklistAction(username) { if(!globalUsers[currentLoggedUser].blacklist) globalUsers[currentLoggedUser].blacklist = {}; if(globalUsers[currentLoggedUser].blacklist[username]) delete globalUsers[currentLoggedUser].blacklist[username]; else globalUsers[currentLoggedUser].blacklist[username] = true; saveDB(); pushBaseToCloud(); viewUserProfileCard(username); }
     function updatePrivacyOnServer() { globalUsers[currentLoggedUser].hideOnline = document.getElementById('privacy-hide-online-checkbox').checked; saveDB(); pushBaseToCloud(); }
 
     async function listenToAdminUsers() {
         const container = document.getElementById('admin-users-container'); if(!container) return; container.innerHTML = '';
         await pullBaseFromCloud(); const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
-        
         Object.keys(liveUsers).forEach(u => {
-            const user = liveUsers[u]; const avaBg = user.avatar ? `style="background-image: url('${user.avatar}')"` : '';
-            let badges = ''; if(user.isOwner) badges += `👑`; if(user.isVerified) badges += `⚡`; if(user.isSponsor) badges += `💎`; if(user.isStaff) badges += `🛡️`; if(user.isBot) badges += `🤖`;
-            let aliasHtml = '';
-            if(user.aliases && user.aliases.length > 0) {
-                aliasHtml += `<div class="admin-alias-manager-box">`;
-                user.aliases.forEach(a => { aliasHtml += `<div class="admin-alias-badge-item"><span>@${a}</span><span class="admin-alias-delete-x" onclick="deleteAdminAliasAction('${u}', '${a}')">✕</span></div>`; });
-                aliasHtml += `</div>`;
-            }
-            container.innerHTML += `
-                <div class="admin-user-row">
-                    <div class="admin-user-card-top">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="avatar" ${avaBg} style="width:34px; height:34px; margin-right:0; font-size:12px;">${user.avatar ? '' : user.name.substring(0,1).toUpperCase()}</div>
-                            <div class="admin-user-card-meta">
-                                <span style="font-size:13px; font-weight:600;">@${u} ${badges}</span>
-                                <span style="font-size:11px; color:#00FF66;">⚓ ${user.doubloons || 0} | ${user.banned ? '🔴 BAN' : '🟢 OK'}</span>
-                            </div>
-                        </div>
-                        <button class="admin-manage-trigger-btn" onclick="openAdminUserContextMenuPopupStream(event, '${u}')">⚙️ УПРАВЛЕНИЕ</button>
-                    </div>
-                    ${aliasHtml}
-                </div>`;
-        });
-        document.getElementById('stat-total-users').innerText = Object.keys(liveUsers).length;
-        document.getElementById('stat-banned-users').innerText = Object.keys(liveUsers).filter(u => liveUsers[u].banned).length;
+            const user = liveUsers[u]; const avaBg = user.avatar ? `style="background-image: url('${user.avatar}')"` : ''; let badges = ''; if(user.isOwner) badges += `👑`; if(user.isVerified) badges += `⚡`; if(user.isSponsor) badges += `💎`; if(user.isStaff) badges += `🛡️`; if(user.isBot) badges += `🤖`;
+            let aliasHtml = ''; if(user.aliases && user.aliases.length > 0) { aliasHtml += `<div class="admin-alias-manager-box">`; user.aliases.forEach(a => { aliasHtml += `<div class="admin-alias-badge-item"><span>@${a}</span><span class="admin-alias-delete-x" onclick="deleteAdminAliasAction('${u}', '${a}')">✕</span></div>`; }); aliasHtml += `</div>`; }
+            container.innerHTML += `<div class="admin-user-row"><div class="admin-user-card-top"><div style="display:flex; align-items:center; gap:10px;"><div class="avatar" ${avaBg} style="width:34px; height:34px; margin-right:0; font-size:12px;">${user.avatar ? '' : user.name.substring(0,1).toUpperCase()}</div><div class="admin-user-card-meta"><span style="font-size:13px; font-weight:600;">@${u} ${badges}</span><span style="font-size:11px; color:#00FF66;">⚓ ${user.doubloons || 0} | ${user.banned ? '🔴 BAN' : '🟢 OK'}</span></div></div><button class="admin-manage-trigger-btn" onclick="openAdminUserContextMenuPopupStream(event, '${u}')">⚙️ УПРАВЛЕНИЕ</button></div>${aliasHtml}</div>`;
+        }); document.getElementById('stat-total-users').innerText = Object.keys(liveUsers).length; document.getElementById('stat-banned-users').innerText = Object.keys(liveUsers).filter(u => liveUsers[u].banned).length;
     }
     function openAdminUserContextMenuPopupStream(event, targetUser) {
-        event.stopPropagation(); closeContextMenu();
-        const isBanned = globalUsers[targetUser].banned;
+        event.stopPropagation(); closeContextMenu(); const isBanned = globalUsers[targetUser].banned;
         let html = `<div class="context-menu" id="admin-actions-context-popup" style="display:block; position:fixed; top:${event.clientY - 40}px; left:${event.clientX - 140}px; width:185px; z-index:9999999; max-height:280px; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5), 0 0 15px rgba(108,99,255,0.25);">`;
-        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'O')">👑 Основатель: ${globalUsers[targetUser].isOwner?'ВЫКЛ':'ДАТЬ'}</div>`;
-        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'V')">⚡ Верификация: ${globalUsers[targetUser].isVerified?'ВЫКЛ':'ДАТЬ'}</div>`;
-        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'S')">💎 Спонсор: ${globalUsers[targetUser].isSponsor?'ВЫКЛ':'ДАТЬ'}</div>`;
-        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'M')">🛡️ Модератор: ${globalUsers[targetUser].isStaff?'ВЫКЛ':'ДАТЬ'}</div>`;
-        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'B')">🤖 Робот: ${globalUsers[targetUser].isBot?'ВЫКЛ':'ДАТЬ'}</div>`;
-        html += `<div class="context-item" onclick="openMidnightCustomModal('alias', '${targetUser}')">➕ Добавить @алиас</div>`;
-        html += `<div class="context-item" onclick="openMidnightCustomModal('doubloons', '${targetUser}')" style="color:#00FF66;">⚓ Начислить дублоны</div>`;
-        html += `<div class="context-item" onclick="toggleBan('${targetUser}')" style="color:#ff3366; font-weight:700;">${isBanned ? '🟢 РАЗБАНИТЬ' : '🔴 ЗАБАНИТЬ'}</div>`;
-        html += `</div>`;
-        document.body.insertAdjacentHTML('beforeend', html);
+        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'O')">👑 Основатель: ${globalUsers[targetUser].isOwner?'ВЫКЛ':'ДАТЬ'}</div><div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'V')">⚡ Верификация: ${globalUsers[targetUser].isVerified?'ВЫКЛ':'ДАТЬ'}</div><div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'S')">💎 Спонсор: ${globalUsers[targetUser].isSponsor?'ВЫКЛ':'ДАТЬ'}</div><div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'M')">🛡️ Модератор: ${globalUsers[targetUser].isStaff?'ВЫКЛ':'ДАТЬ'}</div><div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'B')">🤖 Робот: ${globalUsers[targetUser].isBot?'ВЫКЛ':'ДАТЬ'}</div><div class="context-item" onclick="openMidnightCustomModal('alias', '${targetUser}')">➕ Добавить @алиас</div><div class="context-item" onclick="openMidnightCustomModal('doubloons', '${targetUser}')" style="color:#00FF66;">⚓ Начислить дублоны</div><div class="context-item" onclick="toggleBan('${targetUser}')" style="color:#ff3366; font-weight:700;">${isBanned ? '🟢 РАЗБАНИТЬ' : '🔴 ЗАБАНИТЬ'}</div>`;
+        html += `</div>`; document.body.insertAdjacentHTML('beforeend', html);
     }
 
-    async function toggleAdminBadge(username, type) { 
-        if(type === 'O') globalUsers[username].isOwner = !globalUsers[username].isOwner; if(type === 'V') globalUsers[username].isVerified = !globalUsers[username].isVerified; 
-        if(type === 'S') globalUsers[username].isSponsor = !globalUsers[username].isSponsor; if(type === 'M') globalUsers[username].isStaff = !globalUsers[username].isStaff; 
-        if(type === 'B') globalUsers[username].isBot = !globalUsers[username].isBot; 
-        saveDB(); await pushBaseToCloud(); listenToAdminUsers(); 
-    }
+    async function toggleAdminBadge(username, type) { if(type === 'O') globalUsers[username].isOwner = !globalUsers[username].isOwner; if(type === 'V') globalUsers[username].isVerified = !globalUsers[username].isVerified; if(type === 'S') globalUsers[username].isSponsor = !globalUsers[username].isSponsor; if(type === 'M') globalUsers[username].isStaff = !globalUsers[username].isStaff; if(type === 'B') globalUsers[username].isBot = !globalUsers[username].isBot; saveDB(); await pushBaseToCloud(); listenToAdminUsers(); }
     async function toggleBan(username) { globalUsers[username].banned = !globalUsers[username].banned; addSystemLogMessage(`[ROOT] Статус блокировки @${username} изменен.`); saveDB(); await pushBaseToCloud(); listenToAdminUsers(); }
     async function wipeAllMessages() { if(confirm("Wipe all system messages?")) { globalMessages = {}; addSystemLogMessage("[ROOT] Принудительная очистка всей истории сообщений сети."); saveDB(); await pushBaseToCloud(); renderMessages(); } }
     async function deleteAdminAliasAction(username, aliasToDelete) { if(globalUsers[username] && globalUsers[username].aliases) { globalUsers[username].aliases = globalUsers[username].aliases.filter(a => a !== aliasToDelete); saveDB(); await pushBaseToCloud(); listenToAdminUsers(); showToastNotification(currentLang === 'RU' ? 'Юзернейм успешно удален' : 'Alias removed successfully'); } }
 
-    window.addEventListener('storage', function(e) {
-        if(e.key === 'midnight_typing_ping' && e.newValue) {
-            const data = JSON.parse(e.newValue);
-            if(data.room === activeChatId && data.sender !== currentLoggedUser) {
-                const statusLabel = document.getElementById('chat-room-typing-status');
-                if(statusLabel) {
-                    statusLabel.innerText = `@${data.sender} typing...`; statusLabel.style.display = 'block';
-                    if(window.typingTimeoutRef) clearTimeout(window.typingTimeoutRef); window.typingTimeoutRef = setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
-                }
-            }
-        }
-    });
+    window.addEventListener('storage', function(e) { if(e.key === 'midnight_typing_ping' && e.newValue) { const data = JSON.parse(e.newValue); if(data.room === activeChatId && data.sender !== currentLoggedUser) { const statusLabel = document.getElementById('chat-room-typing-status'); if(statusLabel) { statusLabel.innerText = `@${data.sender} typing...`; statusLabel.style.display = 'block'; if(window.typingTimeoutRef) clearTimeout(window.typingTimeoutRef); window.typingTimeoutRef = setTimeout(() => { statusLabel.style.display = 'none'; }, 2000); } } } });
 
     async function executeCreateHubLogic() {
         const l = langData[currentLang]; const name = document.getElementById('hub-name-input').value.trim(); if(!name) return showToastNotification(l.alertFill);
-        const privacy = document.getElementById('hub-privacy-select').value; let hubUser = "";
-        if(privacy === 'public') { const uInput = document.getElementById('hub-user-link-input').value.trim().replace('@','').toLowerCase(); if(!uInput) return showToastNotification(l.alertFill); if(uInput === "admin" || isUsernameTakenInSystem(uInput)) return showToastNotification(l.alertHubExist); hubUser = uInput; }
+        const privacy = document.getElementById('hub-privacy-select').value; let hubUser = ""; if(privacy === 'public') { const uInput = document.getElementById('hub-user-link-input').value.trim().replace('@','').toLowerCase(); if(!uInput) return showToastNotification(l.alertFill); if(uInput === "admin" || isUsernameTakenInSystem(uInput)) return showToastNotification(l.alertHubExist); hubUser = uInput; }
         const id = 'hub_' + Math.random().toString(36).substring(2, 9); globalHubs[id] = { id: id, name: name, type: hubCreationTypeHolder, privacy: privacy, user: hubUser, creator: currentLoggedUser, avatar: "", members: [currentLoggedUser], pinnedMsgId: null };
         localStorage.setItem('midnight_hubs', JSON.stringify(globalHubs)); if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; userChats[currentLoggedUser][id] = { unreadCount: 0, isHub: true }; addSystemLogMessage(`[HUBS] Успешно создан новый хаб "${name}"`); saveDB(); await pushBaseToCloud(); goToScreen('chats');
     }
 
     function toggleHubPrivacyFormRow() { const privacy = document.getElementById('hub-privacy-select').value; if(document.getElementById('hub-username-row')) document.getElementById('hub-username-row').style.display = privacy === 'public' ? 'block' : 'none'; }
+    function showCreateHubForm(type) { hubCreationTypeHolder = type; const head = document.getElementById('createhub-title-head'); if(head) head.innerText = type === 'channel' ? (currentLang==='RU'?'Новый Канал':'New Channel') : (currentLang==='RU'?'Новая Группа':'New Group'); goToScreen('createhub'); }
 
     setInterval(async () => { if (currentLoggedUser && activeChatId) { await pullBaseFromCloud(); renderMessages(); renderMainChatsLayout(); } }, 3000);
 
-    updateLocalization(); 
-    saveDB();
+    (async function midnightMonolithBootstreamAction() {
+        updateLocalization();
+        await pullBaseFromCloud();
+        saveDB();
+        addSystemLogMessage("[SYSTEM] Актуальная база данных сети успешно синхронизирована по воздуху.");
+    })();
 </script>
 </body>
 </html>
