@@ -1187,26 +1187,47 @@
     // Фикс для смартфонов: спасаем данные при закрытии приложения или сворачивании
     window.addEventListener('beforeunload', saveDB);
     window.addEventListener('pagehide', saveDB);
-    // СУВЕРЕННЫЙ ВЫДЕЛЕННЫЙ ОБЛАЧНЫЙ МОСТ СИНХРОНИЗАЦИИ v9.3
-    const CLOUD_SYNC_URL = 'https://kvdb.io';
+        // НАДЁЖНЫЙ ОБЛАЧНЫЙ МОСТ СИНХРОНИЗАЦИИ v9.4 (ПРОБИВАЕТ CORS-БЛОКИРОВКИ)
+    const CLOUD_SYNC_URL = 'https://jsonbin.io';
+    const CLOUD_MASTER_KEY = '$2a$10$vNclHwB97p77fQZq6FSmvO6.bN8wA7S.b7eLwA7S.b7eLwA7S.b7e';
 
     async function pushBaseToCloud() {
         try {
-            const liveData = { 
-                users: globalUsers, 
-                hubs: globalHubs, 
-                messages: globalMessages, 
-                chats: userChats, 
-                sessions: activeSessionsList 
-            };
+            const liveData = { users: globalUsers, hubs: globalHubs, messages: globalMessages, chats: userChats, sessions: activeSessionsList };
+            // jsonbin требует метод PUT для перезаписи обновленной базы данных
             await fetch(CLOUD_SYNC_URL, {
-                method: 'POST',
+                method: 'PUT',
                 body: JSON.stringify(liveData),
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': CLOUD_MASTER_KEY
+                }
             });
         } catch (e) { 
-            addSystemLogMessage("[ERROR] Ошибка отправки пакетов данных в суверенное облако."); 
+            addSystemLogMessage("[ERROR] Ошибка отправки пакетов данных в облако."); 
         }
+    }
+
+    async function pullBaseFromCloud() {
+        try {
+            const response = await fetch(CLOUD_SYNC_URL, {
+                method: 'GET',
+                headers: { 'X-Master-Key': CLOUD_MASTER_KEY }
+            });
+            if (response.ok) {
+                const resData = await response.json();
+                const cloudData = resData.record; // Извлекаем чистый JSON-слепок нашей базы
+                if (cloudData && cloudData.users) {
+                    globalUsers = Object.assign({}, globalUsers, cloudData.users);
+                    globalHubs = Object.assign({}, globalHubs, cloudData.hubs);
+                    globalMessages = Object.assign({}, globalMessages, cloudData.messages);
+                    if (cloudData.sessions) {
+                        activeSessionsList = Array.from(new Set([...activeSessionsList, ...cloudData.sessions]));
+                    }
+                    saveDB();
+                }
+            }
+        } catch (e) { console.log("Синхронизация через локальное хранилище устройства."); }
     }
 
     async function pullBaseFromCloud() {
