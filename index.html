@@ -1075,18 +1075,18 @@
         if(currentPinnedId) { const list = globalMessages[targetRoom] || []; const foundMsg = list.find(m => m.id === currentPinnedId); if(foundMsg) { banner.style.display = 'flex'; bannerText.innerText = `📌 ${foundMsg.sender}: ${foundMsg.text}`; return; } }
         banner.style.display = 'none';
     }
-    function renderMessages() {
+        function renderMessages() {
         const container = document.getElementById('messages-container'); if(!container) return; 
         const isHub = globalHubs[activeChatId] ? true : false; 
         const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; 
         const targetRoom = isHub ? activeChatId : roomId; const list = globalMessages[targetRoom] || [];
         const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
         
-        // ОБНОВЛЕНИЕ ТЕКУЩЕГО СТАТУСА СОБЕСЕДНИКА В ШАПКЕ ЧАТА (КАК В ТГ)
+        // ОБНОВЛЕНИЕ ТЕКУЩЕГО СТАТУСА СОБЕСЕДНИКА В ШАПКЕ ЧАТА (ПРАВИЛЬНЫЙ РАСЧЕТ)
         const statusRow = document.getElementById('chat-room-typing-status');
         if (statusRow && activeChatId) {
-            // Сначала проверяем, не печатает ли он прямо сейчас
-            const lastTypePing = localStorage.getItem(`midnight_typing_${activeChatId}_${m.sender}`);
+            // Проверяем, не печатает ли собеседник прямо сейчас (ищем по его ID)
+            const lastTypePing = localStorage.getItem(`midnight_typing_${activeChatId}_${activeChatId}`);
             const isTypingActive = lastTypePing && (Date.now() - parseInt(lastTypePing) < 2000);
             
             if (isTypingActive) {
@@ -1117,7 +1117,7 @@
             }
         }
 
-        // РЕНДЕР ОКОН БАБЛОВ (БЕЗ МИГАНИЯ)
+        // РЕНДЕР БАБЛОВ СООБЩЕНИЙ (БЕЗ МИГАНИЯ)
         container.innerHTML = '';
         list.forEach(m => {
             const isMe = m.sender === currentLoggedUser; 
@@ -1139,6 +1139,7 @@
         }); 
         container.scrollTop = container.scrollHeight;
     }
+
     // ДЕЙСТВИЯ С СООБЩЕНИЯМИ И КОНТЕКСТНОЕ МЕНЮ
     function openMessageActionsMenuAction(event, targetRoom, msgId) {
         event.stopPropagation(); const hub = globalHubs[activeChatId]; const hasAdminRights = !hub ? true : (hub.creator === currentLoggedUser || currentLoggedUser === 'admin');
