@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Midnight Phone Network v9.0</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Inter', sans-serif; 
+        }
+        body { 
+            background-color: #0b0b0e; 
+            color: #ffffff; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        
+        /* ЛАМПОВЫЙ НЕОНОВЫЙ КОРПУС СМАРТФОНА */
+        .phone-emulator { 
+            width: 380px; 
+            height: 800px; 
+            background-color: #121214; 
+            border: 10px solid #252529; 
+            border-radius: 44px; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            position: relative; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6), 0 0 35px rgba(108, 99, 255, 0.2); 
+        }
+        
+        /* ЕБЕЙШАЯ АНИМАЦИЯ СМЕНЫ ЭКРАНОВ С ЭФФЕКТОМ РАЗМЫТИЯ */
+        .screen { 
+            display: none; 
+            flex-direction: column; 
+            height: 100%; 
+            width: 100%; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            padding-bottom: 20px; 
+            background-color: #121214;
+            opacity: 0;
+            z-index: 1;
+        }
+        .screen.active { 
+            display: flex; 
+            animation: slideIn 0.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            z-index: 2;
+        }
+        @keyframes slideIn {
+            0% { transform: translateX(40px); filter: blur(4px); opacity: 0; }
+            100% { transform: translateX(0); filter: blur(0); opacity: 1; }
+        }
+        /* Неоновые VIP-статусы */
+        .badge-owner { color: #FFD700; font-weight: bold; margin-left: 4px; text-shadow: 0 0 8px #FFD700; }
+        .badge-verified { color: #00E5FF; font-weight: bold; margin-left: 4px; text-shadow: 0 0 8px #00E5FF; }
+        .badge-sponsor { color: #FF007F; font-weight: bold; margin-left: 4px; text-shadow: 0 0 8px #FF007F; }
+        .badge-mod { color: #00FF66; font-weight: bold; margin-left: 4px; text-shadow: 0 0 8px #00FF66; }
+        .badge-bot { color: #9B51E0; font-weight: bold; margin-left: 4px; text-shadow: 0 0 8px #9B51E0; }
+        
+        /* Всплывающее неоновое Toast-окно */
+        .toast-notification { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: rgba(26, 26, 31, 0.95); border: 1px solid #6C63FF; padding: 12px 20px; border-radius: 16px; color: #fff; font-size: 13px; font-weight: 500; text-align: center; width: 85%; z-index: 99999; pointer-events: none; opacity: 0; transition: opacity 0.3s, transform 0.3s; box-shadow: 0 10px 25px rgba(0,0,0,0.5), 0 0 15px rgba(108, 99, 255, 0.3); }
+        .toast-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        /* Верхний бар выбора языков */
+        .lang-bar { width: 100%; display: flex; justify-content: flex-end; padding: 15px 20px 0 20px; position: absolute; top: 0; z-index: 10; }
+        .lang-btn { background: #1e1e24; color: #6C63FF; border: 1px solid #333; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+        /* НОВАЯ ЕБЕЙШАЯ ПЛАШКА СИСТЕМНЫХ УВЕДОМЛЕНИЙ 🔔 */
+        .notif-popup-panel { display: none; flex-direction: column; position: absolute; top: 110px; left: 20px; right: 20px; background: #1a1a1f; border: 1px solid #6C63FF; border-radius: 16px; z-index: 200; box-shadow: 0 15px 30px rgba(0,0,0,0.7), 0 0 20px rgba(108,99,255,0.2); max-height: 250px; overflow-y: auto; padding: 12px; }
+        .notif-popup-title { font-size: 13px; font-weight: 700; color: #6C63FF; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #23232a; padding-bottom: 4px; }
+        .notif-item-row { font-size: 11.5px; color: #d1d1d6; padding: 6px 4px; border-bottom: 1px solid #23232a; line-height: 1.3; }
+        .notif-item-row:last-child { border-bottom: none; }
+        /* Навигационные шапки внутри телефона */
+        .header { 
+            height: 65px; 
+            background-color: #1a1a1f; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 20px; 
+            justify-content: space-between; 
+            border-bottom: 1px solid #23232a; 
+            margin-top: 40px; 
+            position: relative; 
+        }
+        .header-title { 
+            font-weight: 600; 
+            font-size: 17px; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+        }
+        .header-actions { 
+            display: flex; 
+            gap: 14px; 
+            align-items: center; 
+        }
+        .icon-btn { 
+            color: white; 
+            font-size: 20px; 
+            cursor: pointer; 
+            background: none; 
+            border: none; 
+            outline: none; 
+        }
+        
+        /* Кнопки переключения папок чатов */
+        .founder-tabs { 
+            display: none; 
+            background-color: #1a1a1f; 
+            padding: 5px 16px; 
+            gap: 10px; 
+            border-bottom: 1px solid #23232a; 
+        }
+        .tab-btn { 
+            background: none; 
+            border: none; 
+            color: #8e8e93; 
+            font-weight: 600; 
+            font-size: 13px; 
+            padding: 6px 12px; 
+            cursor: pointer; 
+            border-radius: 8px; 
+        }
+        .tab-btn.active { 
+            background-color: rgba(108, 99, 255, 0.15); 
+            color: #8b83ff; 
+        }
+
+        /* Плавающая круглая кнопка Telegram-style */
+        .fab-plus-btn { 
+            position: absolute; 
+            bottom: 35px; 
+            right: 25px; 
+            width: 56px; 
+            height: 56px; 
+            background: linear-gradient(135deg, #6C63FF, #00FF66); 
+            color: white; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 26px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.5); 
+            z-index: 99; 
+            transition: transform 0.2s; 
+        }
+        .fab-plus-btn:hover { 
+            transform: scale(1.05) rotate(90deg); 
+        }
+        
+        /* Выезжающее нативное меню хабов */
+        .fab-menu { 
+            display: none; 
+            flex-direction: column; 
+            position: absolute; 
+            bottom: 100px; 
+            right: 25px; 
+            background: #1a1a1f; 
+            border: 1px solid #2c2c35; 
+            border-radius: 14px; 
+            overflow: hidden; 
+            z-index: 100; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            width: 190px; 
+        }
+        .fab-menu-item { 
+            padding: 12px 16px; 
+            font-size: 13px; 
+            color: #fff; 
+            cursor: pointer; 
+            font-weight: 500; 
+        }
+        .fab-menu-item:hover { 
+            background-color: #2c2c35; 
+            color: #00FF66; 
+        }
+        /* Формы экрана авторизации */
+        .auth-container { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 30px; 
+            text-align: center; 
+            margin-top: 30px; 
+        }
+        .boat-logo { 
+            font-size: 75px; 
+            margin-bottom: 15px; 
+            filter: drop-shadow(0 0 15px #6C63FF); 
+        }
+        .auth-desc { 
+            color: #8e8e93; 
+            font-size: 14px; 
+            margin-bottom: 30px; 
+            padding: 0 10px; 
+        }
+        input, select { 
+            width: 100%; 
+            padding: 14px 16px; 
+            background-color: #1a1a1f; 
+            border: 1px solid #2c2c35; 
+            border-radius: 14px; 
+            color: white; 
+            margin-bottom: 12px; 
+            font-size: 15px; 
+            outline: none; 
+        }
+        input:focus { 
+            border-color: #6C63FF; 
+            background-color: #1e1e24; 
+        }
+        
+        .btn { 
+            width: 100%; 
+            padding: 15px; 
+            background-color: #6C63FF; 
+            color: white; 
+            border: none; 
+            border-radius: 14px; 
+            font-size: 15px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3); 
+            margin-bottom: 8px; 
+        }
+        .toggle-auth { 
+            color: #6C63FF; 
+            margin-top: 18px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            font-weight: 500; 
+        }
+
+        /* Список чатов */
+        .admin-banner-btn { 
+            width: calc(100% - 40px); 
+            margin: 10px 20px 5px 20px; 
+            padding: 10px; 
+            background: linear-gradient(135deg, #FF3366, #6C63FF); 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            font-size: 12px; 
+            cursor: pointer; 
+            text-align: center; 
+            display: none; 
+        }
+        .chats-list { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 5px 0; 
+        }
+        .chat-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 14px 20px; 
+            cursor: pointer; 
+        }
+        .chat-item:hover { 
+            background-color: #1a1a1f; 
+        }
+        .avatar { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 50%; 
+            background-size: cover; 
+            background-position: center; 
+            background-color: rgba(108, 99, 255, 0.15); 
+            color: #8b83ff; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-weight: 600; 
+            font-size: 17px; 
+            position: relative; 
+            margin-right: 14px; 
+            border: 1px solid rgba(108, 99, 255, 0.3); 
+            flex-shrink: 0; 
+        }
+        .online-badge { 
+            width: 11px; 
+            height: 11px; 
+            background-color: #00FF66; 
+            border: 2px solid #121214; 
+            border-radius: 50%; 
+            position: absolute; 
+            bottom: 1px; 
+            right: 1px; 
+        }
+        .chat-info { 
+            flex: 1; 
+            min-width: 0; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+        }
+        .chat-meta-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            line-height: 1; 
+        }
+        .chat-name { 
+            font-weight: 600; 
+            font-size: 15px; 
+            color: #fff; 
+            display: flex; 
+            align-items: center; 
+        }
+        .chat-last-msg { 
+            color: #9898a0; 
+            font-size: 13px; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+        .unread-badge { 
+            background-color: #6C63FF; 
+            color: white; 
+            font-size: 11px; 
+            font-weight: 700; 
+            width: 20px; 
+            height: 20px; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        /* Главное окно переписки внутри телефона */
+        .messages-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 16px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            background-color: #101012; 
+        }
+        
+        /* Сетка для отображения аватарки рядом с баблом */
+        .message-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 2px;
+            /* Плавное всплытие баблов снизу вверх */
+            animation: messageFade 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        .message-wrapper.outgoing-row {
+            flex-direction: row-reverse;
+        }
+        @keyframes messageFade {
+            0% { opacity: 0; transform: translateY(12px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Клик по этой аватарке переведет в профиль */
+        .message-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            background-color: rgba(108, 99, 255, 0.15);
+            border: 1px solid rgba(108, 99, 255, 0.25);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .message { 
+            max-width: 75%; 
+            padding: 10px 14px; 
+            border-radius: 16px; 
+            font-size: 14px; 
+            line-height: 1.4; 
+            position: relative; 
+            cursor: pointer; 
+        }
+        .message.incoming { 
+            background-color: #1a1a1f; 
+            border-bottom-left-radius: 2px; 
+            color: #f5f5f7; 
+        }
+        .message.outgoing { 
+            background-color: #6C63FF; 
+            border-bottom-right-radius: 2px; 
+            color: #fff; 
+        }
+        
+        /* Неоновое VIP-свечение баблов */
+        .message.vip-verified { 
+            border-left: 3px solid #00E5FF; 
+            box-shadow: 0 0 10px rgba(0,229,255,0.15); 
+        }
+        .message.vip-sponsor { 
+            border-left: 3px solid #FF007F; 
+            box-shadow: 0 0 10px rgba(255,0,127,0.15); 
+        }
+        .message img { 
+            max-width: 100%; 
+            border-radius: 10px; 
+            margin-top: 5px; 
+            display: block; 
+            max-height: 150px; 
+            object-fit: cover; 
+        }
+        .file-attach-link { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            color: #00FF66; 
+            text-decoration: none; 
+            font-weight: 600; 
+            font-size: 12px; 
+            margin-top: 4px; 
+            background: rgba(0,255,102,0.1); 
+            padding: 6px 10px; 
+            border-radius: 8px; 
+        }
+        .msg-meta { 
+            display: flex; 
+            align-items: center; 
+            justify-content: flex-end; 
+            gap: 6px; 
+            margin-top: 4px; 
+        }
+        .message-time { 
+            font-size: 10px; 
+            color: rgba(255,255,255,0.5); 
+        }
+        
+        /* СТАТУС ПЕЧАТАЕТ... С НЕОНОВЫМ СВЕЧЕНИЕМ */
+        .chat-status-typing {
+            font-size: 11px;
+            color: #00FF66;
+            font-style: italic;
+            text-shadow: 0 0 6px rgba(0, 255, 102, 0.4);
+            animation: pulseTyping 1.5s infinite ease-in-out;
+            display: none;
+        }
+        @keyframes pulseTyping {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        /* ПЛАШКА ЗАКРЕПЛЁННОГО СООБЩЕНИЯ TELEGRAM STYLE */
+        .pinned-message-banner { 
+            display: none; 
+            background-color: #1a1a1f; 
+            border-bottom: 1px solid #2c2c35; 
+            padding: 8px 20px; 
+            font-size: 12px; 
+            color: #fff; 
+            align-items: center; 
+            justify-content: space-between; 
+            cursor: pointer; 
+            border-left: 3px solid #00FF66; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        }
+        .pinned-text-preview { 
+            color: #8e8e93; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            max-width: 85%; 
+        }
+        .unpin-x-btn { 
+            color: #ff3366; 
+            font-weight: 700; 
+            font-size: 14px; 
+            cursor: pointer; 
+            padding: 2px 6px; 
+        }
+        /* Панель отправки текста и вложений */
+        .input-panel { 
+            height: 65px; 
+            background-color: #1a1a1f; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 12px; 
+            gap: 8px; 
+            border-top: 1px solid #23232a; 
+        }
+        .input-panel input { 
+            margin-bottom: 0; 
+            flex: 1; 
+            background-color: #121214; 
+        }
+        
+        /* Нижняя неоновая панель подписки в каналах */
+        .channel-join-panel { 
+            display: none; 
+            height: 65px; 
+            background-color: #1a1a1f; 
+            border-top: 1px solid #23232a; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 0 16px; 
+        }
+        .channel-join-btn { 
+            width: 100%; 
+            padding: 12px; 
+            background: linear-gradient(135deg, #6C63FF, #00FF66); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 14px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            text-align: center; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2); 
+        }
+        
+        /* Всплывающие контекстные меню баблов */
+        .context-menu { 
+            display: none; 
+            position: absolute; 
+            top: 60px; 
+            right: 20px; 
+            background-color: #1a1a1f; 
+            border: 1px solid #2c2c35; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            z-index: 100; 
+            width: 160px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+        }
+        .context-item { 
+            padding: 12px 16px; 
+            font-size: 13px; 
+            color: #fff; 
+            cursor: pointer; 
+        }
+        .context-item:hover { 
+            background-color: #2c2c35; 
+        }
+        /* УДОБНАЯ АДМИНКА v9 НА БАЗЕ КРУПНЫХ КАРТОЧЕК */
+        .admin-stats-box { 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 15px; 
+            background-color: #1a1a1f; 
+            margin: 10px 16px; 
+            border-radius: 14px; 
+            border: 1px solid #23232a; 
+            font-size: 12px; 
+            text-align: center; 
+        }
+        .admin-stat-val { 
+            font-size: 18px; 
+            font-weight: 700; 
+            color: #6C63FF; 
+            margin-top: 4px; 
+        }
+        .admin-user-row { 
+            display: flex; 
+            flex-direction: column; 
+            background-color: #1a1a1f; 
+            margin: 6px 16px; 
+            border-radius: 14px; 
+            border: 1px solid #23232a; 
+            padding: 14px 16px; 
+            gap: 10px; 
+        }
+        .admin-user-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .admin-user-card-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .admin-manage-trigger-btn {
+            background-color: #2c2c35;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: none;
+            width: auto;
+            margin-bottom: 0;
+        }
+        .admin-manage-trigger-btn:hover {
+            background-color: #3a3a45;
+        }
+        
+        /* СТИЛИ МЕНЕДЖЕРА АЛИАСОВ АДМИНИСТРАТОРА */
+        .admin-alias-manager-box { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+            background: #121214; 
+            padding: 8px; 
+            border-radius: 10px; 
+            margin-top: 4px; 
+            border: 1px solid #23232a; 
+        }
+        .admin-alias-badge-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #1a1a1f; 
+            padding: 5px 10px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+            color: #6C63FF; 
+        }
+        .admin-alias-delete-x { 
+            color: #ff3366; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 13px; 
+            padding: 0 4px; 
+        }
+
+        /* ИНТЕРФЕЙС ПЕРЕКЛЮЧЕНИЯ МУЛЬТИАККАУНТОВ (ВНУТРИ НАСТРОЕК) */
+        .multi-account-section {
+            background-color: #1a1a1f;
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 16px;
+            border: 1px solid #2c2c35;
+        }
+        .account-selector-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 4px;
+        }
+        .account-selector-row:hover {
+            background-color: #23232a;
+        }
+        .account-selector-row.current-active-profile {
+            background-color: rgba(108, 99, 255, 0.12);
+            border: 1px solid rgba(108, 99, 255, 0.3);
+        }
+        .account-meta-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .account-active-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #00FF66;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00FF66;
+        }
+        /* Раздел настроек и карточки профилей */
+        .settings-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 20px; 
+        }
+        .profile-card { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin-bottom: 25px; 
+            text-align: center; 
+        }
+        .profile-avatar-big { 
+            width: 84px; 
+            height: 84px; 
+            border-radius: 50%; 
+            background-size: cover; 
+            background-position: center; 
+            background-color: rgba(108, 99, 255, 0.15); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 32px; 
+            font-weight: 700; 
+            color: #8b83ff; 
+            border: 2px solid #6C63FF; 
+            margin-bottom: 12px; 
+        }
+        .profile-name { 
+            font-size: 20px; 
+            font-weight: 700; 
+            color: #fff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .profile-username { 
+            color: #6C63FF; 
+            font-size: 14px; 
+            margin-top: 2px; 
+        }
+        .profile-doubloons { 
+            font-size: 13px; 
+            color: #00FF66; 
+            font-weight: 600; 
+            margin-top: 5px; 
+        }
+        .settings-section { 
+            margin-bottom: 24px; 
+        }
+        .section-title { 
+            font-size: 12px; 
+            color: #6C63FF; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            margin-bottom: 8px; 
+        }
+        .setting-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 14px 16px; 
+            background-color: #1a1a1f; 
+            border-radius: 14px; 
+            margin-bottom: 8px; 
+            font-size: 14px; 
+            cursor: pointer; 
+        }
+        .setting-item:hover { 
+            background-color: #1e1e24; 
+        }
+        
+        /* КНОПКА ВЫХОДА ИЗ АККАУНТА В САМОМ НИЗУ НАСТРОЕК */
+        .btn-logout-danger {
+            background: rgba(255, 51, 102, 0.1);
+            color: #ff3366;
+            border: 1px solid rgba(255, 51, 102, 0.4);
+            box-shadow: 0 4px 12px rgba(255, 51, 102, 0.1);
+            margin-top: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-logout-danger:hover {
+            background: #ff3366;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 51, 102, 0.3);
+        }
+        
+        /* Ползунки переключателей */
+        .switch { 
+            position: relative; 
+            display: inline-block; 
+            width: 42px; 
+            height: 22px; 
+        }
+        .switch input { 
+            opacity: 0; 
+            width: 0; 
+            height: 0; 
+        }
+        .slider { 
+            position: absolute; 
+            cursor: pointer; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background-color: #2c2c35; 
+            transition: .2s; 
+            border-radius: 22px; 
+        }
+        .slider:before { 
+            position: absolute; 
+            content: ""; 
+            height: 16px; 
+            width: 16px; 
+            left: 3px; 
+            bottom: 3px; 
+            background-color: white; 
+            transition: .2s; 
+            border-radius: 50%; 
+        }
+        input:checked + .slider { 
+            background-color: #6C63FF; 
+        }
+        input:checked + .slider:before { 
+            transform: translateX(20px); 
+        }
+
+        /* УЛЬТИМАТИВНЫЕ НАТИВНЫЕ МОДАЛЬНЫЕ ОКНА */
+        .midnight-custom-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 999999;
+            justify-content: center;
+            align-items: center;
+        }
+        .midnight-custom-modal-window {
+            background: #1a1a1f;
+            border: 1px solid #2c2c35;
+            width: 90%;
+            max-width: 340px;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 15px rgba(108,99,255,0.2);
+            text-align: center;
+        }
+        .midnight-custom-modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #fff;
+        }
+        .midnight-custom-modal-buttons-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .modal-btn-cancel {
+            background: #2c2c35;
+            color: #fff;
+            box-shadow: none;
+        }
+        .modal-btn-cancel:hover {
+            background: #3a3a45;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ЛАМПОВЫЙ НЕОНОВЫЙ КОРПУС СМАРТФОНА -->
+<div class="phone-emulator">
+    
+    <!-- Кнопка переключения языков верхняя -->
+    <div class="lang-bar">
+        <button class="lang-btn" onclick="toggleLanguage()" id="lang-toggle-btn">RU</button>
+    </div>
+
+    <!-- Всплывающий неоновый Toast для ошибок и уведомлений -->
+    <div class="toast-notification" id="toast-window">Ошибка</div>
+
+    <!-- ВСПЛЫВАЮЩАЯ ПАНЕЛЬ СИСТЕМНЫХ ЛОГОВ СЕТИ (ПЛАШКА 🔔) -->
+    <div class="notif-popup-panel" id="midnight-logs-panel">
+        <div class="notif-popup-title" id="lbl-logs-title">Системные логи сети</div>
+        <div id="midnight-logs-container-list">
+            <div class="notif-item-row" style="color:#00FF66;">[SYSTEM] Ядро Midnight v9.0 успешно инициализировано по воздуху.</div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ВХОДА И РЕГИСТРАЦИИ -->
+    <div id="screen-auth" class="screen active">
+        <div class="auth-container">
+            <div class="boat-logo">⛵</div>
+            <h2 id="auth-title">Вход в Midnight</h2>
+            <p class="auth-desc" id="auth-desc">Введите ваш уникальный юзернейм и пароль.</p>
+            <input type="text" id="auth-username" placeholder="Username">
+            <input type="password" id="auth-password" placeholder="Password">
+            <button class="btn" onclick="handleAuth()" id="auth-btn">ДАЛЕЕ</button>
+            <div class="toggle-auth" onclick="toggleAuthMode()" id="auth-toggle">Нет аккаунта? Регистрация</div>
+        </div>
+    </div>
+    <!-- ГЛАВНЫЙ ЭКРАН ЧАТОВ И ПАПОК -->
+    <div id="screen-chats" class="screen">
+        <div class="header">
+            <span class="header-title" id="chats-header-title">Midnight Мессенджер</span>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="toggleSystemLogsPopupPanel(event)">🔔</button>
+                <button class="icon-btn" onclick="goToScreen('search')">🔍</button>
+                <button class="icon-btn" onclick="goToScreen('settings')">⚙️</button>
+            </div>
+        </div>
+        <div class="founder-tabs" id="founder-tabs-panel">
+            <button class="tab-btn active" id="tab-chats-btn" onclick="switchFounderTab('chats')">Личные чаты</button>
+            <button class="tab-btn" id="tab-users-btn" onclick="switchFounderTab('users')">Пользователи</button>
+        </div>
+        
+        <button class="admin-banner-btn" id="admin-banner" onclick="goToScreen('admin')">👑 ADMIN PANEL</button>
+        <div class="chats-list" id="chats-list-container"></div>
+        
+        <!-- Круглая плавающая кнопка Telegram-style с меню хабов -->
+        <div class="fab-plus-btn" onclick="toggleFabMenu(event)">+</div>
+        <div class="fab-menu" id="fab-menu-window">
+            <div class="fab-menu-item" id="fab-item-group" onclick="showCreateHubForm('group')">👥 Создать Группу</div>
+            <div class="fab-menu-item" id="fab-item-channel" onclick="showCreateHubForm('channel')">📢 Создать Канал</div>
+        </div>
+    </div>
+    <!-- ЭКРАН ГЛОБАЛЬНОГО ПОИСКА -->
+    <div id="screen-search" class="screen">
+        <div class="header">
+            <button class="icon-btn" onclick="goToScreen('chats')">⬅️</button>
+            <span class="header-title" id="search-header-title">Поиск людей и хабов</span>
+            <span></span>
+        </div>
+        <div style="padding: 12px 16px 4px 16px;">
+            <input type="text" id="search-input-field" placeholder="Поиск по названию или @юзернейму..." oninput="handleGlobalSearch()">
+        </div>
+        <div class="chats-list" id="search-results-container"></div>
+    </div>
+
+    <!-- НАТИВНЫЙ ЭКРАН СОЗДАНИЯ КАНАЛА / ГРУППЫ -->
+    <div id="screen-createhub" class="screen">
+        <div class="header">
+            <button class="icon-btn" onclick="goToScreen('chats')">⬅️</button>
+            <span class="header-title" id="createhub-title-head">Новый хаб</span>
+            <span></span>
+        </div>
+        <div class="settings-container">
+            <div class="section-title" id="lbl-hub-setup-title">Настройки нового чата</div>
+            <input type="text" id="hub-name-input" placeholder="Название (например: Midnight News)">
+            <select id="hub-privacy-select" onchange="toggleHubPrivacyFormRow()">
+                <option value="public">Публичный (Public)</option>
+                <option value="private">Приватный (Private)</option>
+            </select>
+            <div id="hub-username-row">
+                <input type="text" id="hub-user-link-input" placeholder="Ссылка (например: news_feed)">
+            </div>
+            <button class="btn" style="background: linear-gradient(135deg, #6C63FF, #00FF66); margin-top:10px;" onclick="executeCreateHubLogic()">🚀 ПОДТВЕРДИТЬ СОЗДАНИЕ</button>
+        </div>
+    </div>
+    <!-- VIP УДОБНАЯ КАРТОЧНАЯ АДМИНКА -->
+    <div id="screen-admin" class="screen">
+        <div class="header">
+            <button class="icon-btn" onclick="goToScreen('chats')">⬅️</button>
+            <span class="header-title">Панель управления</span>
+            <span style="color: #ff3366; font-size: 11px; font-weight:700;">ROOT v9</span>
+        </div>
+        <div class="admin-stats-box">
+            <div><div>Всего аккаунтов</div><div class="admin-stat-val" id="stat-total-users">0</div></div>
+            <div><div>В бане</div><div class="admin-stat-val" id="stat-banned-users" style="color:#ff3366;">0</div></div>
+        </div>
+        <div style="padding: 5px 20px; font-size:12px; color:#8e8e93; font-weight:600;">УПРАВЛЕНИЕ УЧАСТНИКАМИ СЕТИ:</div>
+        <div class="chats-list" id="admin-users-container" style="flex:1;"></div>
+        <div style="padding: 10px 16px;">
+            <button class="btn" style="background-color:#ff3366; font-size:13px; padding:12px;" onclick="wipeAllMessages()">💥 ОЧИСТИТЬ ВСЕ СООБЩЕНИЯ</button>
+        </div>
+    </div>
+
+    <!-- МЕНЮ НАСТРОЕК С МУЛЬТИАККАУНТОМ -->
+    <div id="screen-settings" class="screen">
+        <div class="header">
+            <button class="icon-btn" onclick="goToScreen('chats')">⬅️</button>
+            <span class="header-title" id="settings-header-title">Настройки</span>
+            <span></span>
+        </div>
+        <div class="settings-container">
+            <div class="profile-card">
+                <div class="profile-avatar-big" id="my-profile-avatar" style="background-size:cover; background-position:center;"></div>
+                <div class="profile-name" id="my-profile-display-name">Founder</div>
+                <div class="profile-username" id="my-profile-username">@admin</div>
+                <div class="profile-doubloons" id="my-profile-doubloons" style="display:none;">⚓ 0 Дублонов</div>
+            </div>
+
+            <!-- ИНТЕРФЕЙС МУЛЬТИАККАУНТНОСТИ (ДОБАВЛЕНИЕ И ПЕРЕКЛЮЧЕНИЕ ПРОФИЛЕЙ) -->
+            <div class="settings-section">
+                <div class="section-title">Мои аккаунты (Мультиаккаунт)</div>
+                <div class="multi-account-section" id="multi-account-profiles-list">
+                    <!-- Сюда JS будет рендерить список профилей для быстрого тапа -->
+                </div>
+                <button class="btn" style="background:#1e1e24; color:#6C63FF; box-shadow:none; font-size:13px; padding:10px;" onclick="switchAccountToNewLoginFormAction()">➕ ДОБАВИТЬ ЕЩЁ АККАУНТ</button>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-title" id="sec-title-edit">Редактировать профиль</div>
+                <div class="setting-item" onclick="editProfileField('name')"><span id="lbl-edit-name">Изменить отображаемое имя</span><span>></span></div>
+                <div class="setting-item" onclick="editProfileField('username')"><span id="lbl-edit-user">Изменить @юзернейм</span><span>></span></div>
+                <div class="setting-item" onclick="document.getElementById('avatar-file-uploader').click()"><span id="lbl-edit-ava">Загрузить фото с устройства</span><span style="color:#00FF66;">+📸</span></div>
+            </div>
+            
+            <div class="settings-section">
+                <div class="section-title" id="privacy-section-title">Конфиденциальность</div>
+                <div class="setting-item">
+                    <span id="label-hide-online">Скрывать статус 'В сети'</span>
+                    <label class="switch"><input type="checkbox" id="privacy-hide-online-checkbox" onchange="updatePrivacyOnServer()"><span class="slider"></span></label>
+                </div>
+            </div>
+
+            <!-- КРУПНАЯ СТИЛЬНАЯ КНОПКА ВЫХОДА В САМОМ НИЗУ НАСТРОЕК -->
+            <button class="btn btn-logout-danger" onclick="handleLogout()">Выйти из аккаунта 🚪</button>
+        </div>
+    </div>
+    <!-- ЭКРАН ПОДРОБНОГО ПРОФИЛЯ С АВАТАРКОЙ -->
+    <div id="screen-userprofile" class="screen">
+        <div class="header">
+            <button class="icon-btn" onclick="goToScreen('chats')">⬅️</button>
+            <span class="header-title" id="userprofile-header-title">Профиль</span>
+            <span></span>
+        </div>
+        <div class="settings-container" id="userprofile-details-container"></div>
+    </div>
+
+    <!-- ОКНО ТЕКУЩЕЙ ПЕРЕПИСКИ С АВАТАРКОЙ В ШАПКЕ -->
+    <div id="screen-room" class="screen">
+        <div class="header" style="justify-content: flex-start; gap: 12px;">
+            <button class="icon-btn" onclick="goToScreen('chats')" style="margin-right: 4px;">⬅️</button>
+            <!-- Аватарка собеседника в шапке, клик по ней откроет его профиль прямо из чата -->
+            <div class="avatar" id="room-header-avatar" style="width: 38px; height: 38px; font-size: 14px; margin-right: 0;" onclick="openProfileDirectlyFromCurrentChatStream()"></div>
+            <div style="flex: 1; min-width: 0;">
+                <span class="header-title" id="room-title" style="cursor:pointer; display:inline-block; font-size: 15px;" onclick="openProfileDirectlyFromCurrentChatStream()">Чат</span>
+                <div class="chat-status-typing" id="chat-room-typing-status">typing...</div>
+            </div>
+            <button class="icon-btn" onclick="toggleContextMenu(event)">⋮</button>
+            <div class="context-menu" id="chat-context-menu">
+                <div class="context-item" id="ctx-del-me" onclick="deleteChatAction('me')">Удалить у себя</div>
+                <div class="context-item" id="ctx-del-all" onclick="deleteChatAction('all')" style="color:#ff3366;">Удалить для всех</div>
+            </div>
+        </div>
+        
+        <!-- НЕОНОВАЯ ПЛАШКА ЗАКРЕПЛЁННОГО СООБЩЕНИЯ -->
+        <div class="pinned-message-banner" id="chat-room-pinned-banner" onclick="scrollToPinnedMessageAction()">
+            <span class="pinned-text-preview" id="chat-room-pinned-text">📌 Закреплённое сообщение</span>
+            <span class="unpin-x-btn" onclick="unpinMessageInRoomAction(event)">✕</span>
+        </div>
+
+        <!-- Контейнер для вывода ебейших баблов со встроенными аватарками -->
+        <div class="messages-container" id="messages-container" onclick="closeContextMenu()"></div>
+        <!-- Замок для чужих каналов -->
+        <div id="channel-lock-notice" style="display:none; text-align:center; padding:12px; font-size:12px; color:#ff3366; background:#1a1a1f; font-weight:600; border-top:1px solid #23232a;">
+            🔒 Это канал. Только владельцы могут писать посты.
+        </div>
+        
+        <!-- Нижняя неоновая панель подписки/отписки в реальном времени -->
+        <div class="channel-join-panel" id="chat-join-channel-panel">
+            <button class="channel-join-btn" id="channel-subscribe-action-btn" onclick="toggleChannelSubscription()">Подписаться на канал</button>
+        </div>
+        
+        <!-- Панель ввода сообщений и скрытые системные загрузчики файлов -->
+        <div class="input-panel" id="chat-input-action-panel">
+            <input type="file" id="chat-file-uploader" style="display:none;" onchange="handleChatFileUpload(this)">
+            <input type="file" id="avatar-file-uploader" style="display:none;" accept="image/*" onchange="handleAvatarLocalUpload(this)">
+            
+            <button class="icon-btn" onclick="document.getElementById('chat-file-uploader').click()" style="color:#6C63FF;">📎</button>
+            <input type="text" id="message-input" placeholder="Напишите сообщение..." onclick="closeContextMenu()" oninput="handleTypingIndicatorSignalAction()">
+            <button class="icon-btn" onclick="sendMessage()">➡️</button>
+        </div>
+    </div> <!-- Конец screen-room -->
+</div> <!-- КОНЕЦ КОРПУСА ТЕЛЕФОНА PHONE-EMULATOR -->
+
+<!-- НАШИ КРАСИВЫЕ НАТИВНЫЕ МОДАЛЬНЫЕ ОКНА (ВЗАМЕН PROMPT) -->
+<div class="midnight-custom-modal-overlay" id="midnight-modal-overlay-zone">
+    <div class="midnight-custom-modal-window">
+        <div class="midnight-custom-modal-title" id="midnight-modal-title-text">Введите данные</div>
+        <input type="text" id="midnight-modal-input-field" placeholder="..." style="margin-bottom: 5px;">
+        <div class="midnight-custom-modal-buttons-row">
+            <button class="btn modal-btn-cancel" onclick="closeMidnightCustomModalAction()">Отмена</button>
+            <button class="btn" style="background:#00FF66; color:#121214;" onclick="submitMidnightCustomModalAction()">ОК</button>
+        </div>
+    </div>
+</div>
+<script>
+    let currentLang = 'RU'; 
+    let isSignUp = false;
+    let activeChatId = null;
+    let currentLoggedUser = '';
+    let founderActiveTab = 'chats'; 
+    let activeProfileViewId = null; 
+    let hubCreationTypeHolder = 'group';
+    
+    // Переменные для нативного модального окна взамен prompt
+    let midnightActiveModalType = null;
+    let midnightActiveModalTargetUser = null;
+
+    // Сброс старого несовместимого кэша базы для чистого старта v9.0
+    if (!localStorage.getItem('midnight_v9_phone_monolith')) {
+        localStorage.clear();
+        localStorage.setItem('midnight_v9_phone_monolith', 'true');
+    }
+
+    // Инициализация базы данных: база стерильна, hacker777 вырезан
+    let globalUsers = JSON.parse(localStorage.getItem('midnight_users')) || {
+        "admin": { pass: "1", name: "Founder", avatar: "", banned: false, hideOnline: false, doubloons: 5000, blacklist: {}, isVerified: true, isSponsor: true, isOwner: true, isStaff: true, isBot: false, aliases: ["ceo", "boss"] }
+    };
+
+    let userChats = JSON.parse(localStorage.getItem('midnight_user_chats')) || {};
+    
+    // Предустановленный приветственный пост в общем канале
+    let globalMessages = JSON.parse(localStorage.getItem('midnight_messages')) || {
+        "hub_news": [{ id: "msg_init", text: "🔥 Добро пожаловать в Midnight v9.0! Анимации выезда окон сглажены, добавлены аватарки внутри чат-баблов, баланс дублонов запаролен от чужих глаз, а в настройки зашит удобный МЕНЕДЖЕР МУЛЬТИАККАУНТОВ!", sender: "admin", time: "00:00", delivered: true }]
+    };
+    
+    // Предустановленный глобальный новостной канал
+    let globalHubs = JSON.parse(localStorage.getItem('midnight_hubs')) || {
+        "hub_news": { id: "hub_news", name: "Midnight News", type: "channel", privacy: "public", user: "midnight_news", creator: "admin", avatar: "", members: ["admin"], pinnedMsgId: "msg_init" }
+    };
+
+    // СИСТЕМНЫЙ МАССИВ СЕССИЙ ДЛЯ РАБОТЫ МУЛЬТИАККАУНТНОСТИ
+    let activeSessionsList = JSON.parse(localStorage.getItem('midnight_sessions')) || ["admin"];
+
+    // Функция сохранения во внутреннюю память телефона/браузера
+    function saveDB() {
+        localStorage.setItem('midnight_users', JSON.stringify(globalUsers));
+        localStorage.setItem('midnight_user_chats', JSON.stringify(userChats));
+        localStorage.setItem('midnight_messages', JSON.stringify(globalMessages));
+        localStorage.setItem('midnight_hubs', JSON.stringify(globalHubs));
+        localStorage.setItem('midnight_sessions', JSON.stringify(activeSessionsList));
+    }
+    
+    // Фикс для смартфонов: спасаем данные при закрытии приложения или сворачивании
+    window.addEventListener('beforeunload', saveDB);
+    window.addEventListener('pagehide', saveDB);
+       // ПРОФЕССИОНАЛЬНЫЙ НЕУБИВАЕМЫЙ ОБЛАЧНЫЙ МОСТ v9.2
+    const CLOUD_SYNC_URL = 'https://jsonbin.io';
+    const CLOUD_MASTER_KEY = '$2a$10$vNclHwB97p77fQZq6FSmvO6.bN8wA7S.b7eLwA7S.b7eLwA7S.b7e';
+
+    async function pushBaseToCloud() {
+        try {
+            const liveData = { users: globalUsers, hubs: globalHubs, messages: globalMessages, chats: userChats, sessions: activeSessionsList };
+            await fetch(CLOUD_SYNC_URL, {
+                method: 'PUT', // jsonbin требует PUT для обновления сохраненной базы данных
+                body: JSON.stringify(liveData),
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': CLOUD_MASTER_KEY
+                }
+            });
+        } catch (e) { 
+            addSystemLogMessage("[ERROR] Облачный мост временно недоступен."); 
+        }
+    }
+
+    async function pullBaseFromCloud() {
+        try {
+            const response = await fetch(CLOUD_SYNC_URL, {
+                method: 'GET',
+                headers: { 'X-Master-Key': CLOUD_MASTER_KEY }
+            });
+            if (response.ok) {
+                const resData = await response.json();
+                const cloudData = resData.record; // Извлекаем чистый JSON-слепок нашей базы
+                if (cloudData && cloudData.users) {
+                    globalUsers = Object.assign({}, globalUsers, cloudData.users);
+                    globalHubs = Object.assign({}, globalHubs, cloudData.hubs);
+                    globalMessages = Object.assign({}, globalMessages, cloudData.messages);
+                    if (cloudData.sessions) {
+                        activeSessionsList = Array.from(new Set([...activeSessionsList, ...cloudData.sessions]));
+                    }
+                    saveDB();
+                }
+            }
+        } catch (e) { console.log("Фолбэк на локальный кэш."); }
+    }
+
+    // СИСТЕМА УЛЬТИМАТИВНЫХ НЕОНОВЫХ ЛОГОВ (ПЛАШКА 🔔)
+    function addSystemLogMessage(text) {
+        const container = document.getElementById('midnight-logs-container-list');
+        if (!container) return;
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        // Вставляем лог в самое начало списка
+        container.innerHTML = `<div class="notif-item-row">[${time}] ${text}</div>` + container.innerHTML;
+    }
+
+    function toggleSystemLogsPopupPanel(event) {
+        event.stopPropagation();
+        closeContextMenu();
+        const panel = document.getElementById('midnight-logs-panel');
+        if (panel) {
+            panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+        }
+    }
+        const langData = {
+        EN: {
+            authIn: "Sign In to Midnight", authUp: "Create Profile",
+            descIn: "Connect with your unique username.", descUp: "Choose unique username and password.",
+            btnIn: "CONTINUE", btnUp: "REGISTER NOW",
+            toggleIn: "No account? Sign Up", toggleUp: "Have account? Sign In",
+            chatsTitle: "Midnight Messenger", chatOnline: "online", inputPlaceholder: "Type a message...",
+            settingsTitle: "Settings", privacyTitle: "Privacy Settings", alertFill: "Please fill all fields.",
+            tabChats: "Personal Chats", tabUsers: "Network Users",
+            searchTitle: "Search Users & Hubs", infoTitle: "User Info", secEdit: "Edit Profile",
+            editName: "Change name", editUser: "Change @username", editAva: "Upload Local Avatar",
+            hideOnline: "Hide 'Online' status", promptName: "Enter new name:", promptUser: "Enter unique username:",
+            blockBtn: "Block User", unblockBtn: "Unblock User",
+            ctxMe: "Delete for me", ctxAll: "Delete for everyone", searchField: "Search by name or @username...",
+            grantBtn: "GRANT⚓", alertInBlacklist: "User blocked you!", alertYouBlocked: "Unblock user to chat!",
+            promptAlias: "Enter extra @username alias:", typeChannel: "CHANNEL", typeGroup: "GROUP",
+            addMemberText: "➕ Add Members", renameHubText: "✏️ Rename Hub", promptHubName: "Enter hub name:",
+            alertHubExist: "Public link already taken!",
+            toastRegSuccess: "Success! Please login.", toastFill: "Please fill all required fields.",
+            toastWrong: "Invalid username or password!", toastBanned: "Your account is BANNED!",
+            toastUsernameTaken: "This username is taken!"
+        },
+        RU: {
+            authIn: "Вход в Midnight", authUp: "Создать профиль",
+            descIn: "Введите ваш уникальный юзернейм и пароль.", descUp: "Придумайте уникальное имя пользователя и пароль.",
+            btnIn: "ДАЛЕЕ", btnUp: "ЗАРЕГИСТРИРОВАТЬСЯ",
+            toggleIn: "Нет аккаунта? Регистрация", toggleUp: "Уже есть аккаунт? Войти",
+            chatsTitle: "Midnight Мессенджер", chatOnline: "в сети", inputPlaceholder: "Напишите сообщение...",
+            settingsTitle: "Настройки", privacyTitle: "Конфиденциальность", alertFill: "Пожалуйста, заполните все поля.",
+            tabChats: "Личные чаты", tabUsers: "Пользователи",
+            searchTitle: "Поиск людей и хабов", infoTitle: "Профиль", secEdit: "Редактировать профиль",
+            editName: "Изменить отображаемое имя", editUser: "Изменить @юзернейм", editAva: "Загрузить фото с устройства",
+            hideOnline: "Скрывать статус 'В сети'", promptName: "Введите новое имя:", promptUser: "Введите уникальный юзернейм:",
+            blockBtn: "Заблокировать пользователя", unblockBtn: "Разблокировать пользователя",
+            ctxMe: "Удалить у себя", ctxAll: "Удалить для всех", searchField: "Поиск по названию или @юзернейму...",
+            grantBtn: "ВЫДАТЬ⚓", alertInBlacklist: "Этот пользователь заблокировал вас!", alertYouBlocked: "Разблокируйте пользователя!",
+            promptAlias: "Введите дополнительный @юзернейм:", typeChannel: "КАНАЛ", typeGroup: "ГРУППА",
+            addMemberText: "➕ Добавить участников", renameHubText: "✏️ Переименовать", promptHubName: "Введите новое название:",
+            alertHubExist: "Эта ссылка уже занята!",
+            toastRegSuccess: "Успешно! Теперь войдите.", toastFill: "Заполни все поля.",
+            toastWrong: "Неверный юзернейм или пароль!", toastBanned: "Ваш аккаунт ЗАБЛОКИРОВАН!",
+            toastUsernameTaken: "Этот юзернейм уже занят!"
+        }
+    };
+
+    function updateLocalization() {
+        const l = langData[currentLang]; const el = (id) => document.getElementById(id);
+        if(el('auth-title')) el('auth-title').innerText = isSignUp ? l.authUp : l.authIn;
+        if(el('auth-desc')) el('auth-desc').innerText = isSignUp ? l.descUp : l.descIn;
+        if(el('auth-btn')) el('auth-btn').innerText = isSignUp ? l.btnUp : l.btnIn;
+        if(el('auth-toggle')) el('auth-toggle').innerText = isSignUp ? l.toggleUp : l.toggleIn;
+        if(el('chats-header-title')) el('chats-header-title').innerText = l.chatsTitle;
+        if(el('message-input')) el('message-input').placeholder = l.inputPlaceholder;
+        if(el('settings-header-title')) el('settings-header-title').innerText = l.settingsTitle;
+        if(el('privacy-section-title')) el('privacy-section-title').innerText = l.privacyTitle;
+        if(el('label-hide-online')) el('label-hide-online').innerText = l.hideOnline;
+        if(el('tab-chats-btn')) el('tab-chats-btn').innerText = l.tabChats;
+        if(el('tab-users-btn')) el('tab-users-btn').innerText = l.tabUsers;
+        if(el('search-header-title')) el('search-header-title').innerText = l.searchTitle;
+        if(el('search-input-field')) el('search-input-field').placeholder = l.searchField;
+        if(el('userprofile-header-title')) el('userprofile-header-title').innerText = l.infoTitle;
+        if(el('sec-title-edit')) el('sec-title-edit').innerText = l.secEdit;
+        if(el('lbl-edit-name')) el('lbl-edit-name').innerText = l.editName;
+        if(el('lbl-edit-user')) el('lbl-edit-user').innerText = l.editUser;
+        if(el('ctx-del-me')) el('ctx-del-me').innerText = l.ctxMe;
+        if(el('ctx-del-all')) el('ctx-del-all').innerText = l.ctxAll;
+        if(el('lbl-logs-title')) el('lbl-logs-title').innerText = currentLang === 'RU' ? "Системные логи сети" : "System Network Logs";
+    }
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'EN' ? 'RU' : 'EN';
+        const btn = document.getElementById('lang-toggle-btn'); if(btn) btn.innerText = currentLang === 'EN' ? 'RU' : 'EN';
+        updateLocalization();
+    }
+
+    function showToastNotification(text) {
+        const toast = document.getElementById('toast-window');
+        if(toast) { toast.innerText = text; toast.classList.add('show'); setTimeout(() => { toast.classList.remove('show'); }, 3000); }
+    }
+
+    function toggleFabMenu(event) { event.stopPropagation(); const menu = document.getElementById('fab-menu-window'); if(menu) menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex'; }
+    function toggleContextMenu(event) { event.stopPropagation(); const menu = document.getElementById('chat-context-menu'); if(menu) menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; }
+    
+    function closeContextMenu() { 
+        const cm = document.getElementById('chat-context-menu'); const fm = document.getElementById('fab-menu-window'); const msgMenu = document.getElementById('message-context-menu');
+        if (cm) cm.style.display = 'none'; if (fm) fm.style.display = 'none'; if (msgMenu) msgMenu.remove();
+        const admMenu = document.getElementById('admin-actions-context-popup'); if (admMenu) admMenu.remove();
+        const logsPanel = document.getElementById('midnight-logs-panel'); if (logsPanel) logsPanel.style.display = 'none';
+    }
+    document.addEventListener('click', closeContextMenu);
+    function goToScreen(screenId) {
+        document.querySelectorAll('.phone-emulator .screen').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(`screen-${screenId}`); if(target) target.classList.add('active');
+        if(screenId === 'chats') renderMainChatsLayout();
+        if(screenId === 'admin') listenToAdminUsers();
+        if(screenId === 'settings') updateMySettingsView();
+    }
+
+    function toggleAuthMode() { isSignUp = !isSignUp; updateLocalization(); }
+    
+    function handleLogout() {
+        addSystemLogMessage(`[AUTH] Сессия пользователя @${currentLoggedUser} закрыта.`);
+        activeSessionsList = activeSessionsList.filter(u => u !== currentLoggedUser);
+        
+        if (activeSessionsList.length > 0) {
+            executeSwitchActiveAccountSessionProfile(activeSessionsList[0]);
+        } else {
+            currentLoggedUser = '';
+            saveDB(); pushBaseToCloud();
+            goToScreen('auth');
+        }
+    }
+
+    function isUsernameTakenInSystem(username) {
+        const freshUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
+        const freshHubs = JSON.parse(localStorage.getItem('midnight_hubs')) || globalHubs;
+        let taken = Object.keys(freshUsers).some(u => u === username || (freshUsers[u].aliases && freshUsers[u].aliases.includes(username)));
+        if (taken) return true;
+        return Object.keys(freshHubs).some(h => freshHubs[h].user === username);
+    }
+
+    async function handleAuth() {
+        const user = document.getElementById('auth-username').value.trim().toLowerCase();
+        const pass = document.getElementById('auth-password').value.trim(); const l = langData[currentLang];
+        if(!user || !pass) return showToastNotification(l.toastFill);
+        await pullBaseFromCloud();
+
+        if(!isSignUp && user === "admin" && pass === "1") {
+            currentLoggedUser = user; 
+            if(!activeSessionsList.includes(user)) activeSessionsList.push(user);
+            updateMySettingsView();
+            if(document.getElementById('admin-banner')) document.getElementById('admin-banner').style.display = 'block';
+            if(document.getElementById('founder-tabs-panel')) document.getElementById('founder-tabs-panel').style.display = 'flex'; 
+            addSystemLogMessage(`[AUTH] Успешный вход под ROOT-профилем @admin`);
+            goToScreen('chats'); return;
+        }
+
+        if(isSignUp) {
+            if(globalUsers[user] || user === "admin" || isUsernameTakenInSystem(user)) return showToastNotification(l.toastUsernameTaken);
+            globalUsers[user] = { pass: pass, name: user, avatar: "", banned: false, hideOnline: false, doubloons: 0, blacklist: {}, isVerified: false, isSponsor: false, isOwner: false, isStaff: false, isBot: false, aliases: [] };
+            if(!userChats[user]) userChats[user] = {}; userChats[user]["hub_news"] = { unreadCount: 0, isHub: true };
+            saveDB(); await pushBaseToCloud(); showToastNotification(l.toastRegSuccess); toggleAuthMode();
+        } else {
+            const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
+            if(liveUsers[user] && liveUsers[user].pass === pass) {
+                if(liveUsers[user].banned) return showToastNotification(l.toastBanned);
+                currentLoggedUser = user; 
+                if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {};
+                if(!userChats[currentLoggedUser]["hub_news"]) userChats[currentLoggedUser]["hub_news"] = { unreadCount: 0, isHub: true };
+                
+                if(!activeSessionsList.includes(user)) activeSessionsList.push(user);
+                
+                updateMySettingsView();
+                if(document.getElementById('admin-banner')) document.getElementById('admin-banner').style.display = 'none';
+                if(document.getElementById('founder-tabs-panel')) document.getElementById('founder-tabs-panel').style.display = 'none'; 
+                addSystemLogMessage(`[AUTH] Пользователь @${user} успешно авторизован в системе.`);
+                goToScreen('chats');
+            } else { showToastNotification(l.toastWrong); }
+        }
+    }
+
+    function switchAccountToNewLoginFormAction() {
+        isSignUp = false;
+        document.getElementById('auth-username').value = '';
+        document.getElementById('auth-password').value = '';
+        updateLocalization();
+        goToScreen('auth');
+        addSystemLogMessage("[SYSTEM] Переход на форму авторизации для добавления новой сессии.");
+    }
+
+    function executeSwitchActiveAccountSessionProfile(targetUser) {
+        if(!activeSessionsList.includes(targetUser)) return;
+        currentLoggedUser = targetUser;
+        saveDB();
+        
+        updateMySettingsView();
+        
+        const isRoot = currentLoggedUser === 'admin';
+        if(document.getElementById('admin-banner')) document.getElementById('admin-banner').style.display = isRoot ? 'block' : 'none';
+        if(document.getElementById('founder-tabs-panel')) document.getElementById('founder-tabs-panel').style.display = isRoot ? 'flex' : 'none'; 
+        
+        addSystemLogMessage(`[MULTIACCT] Переключение на профиль @${targetUser}`);
+        showToastNotification(currentLang === 'RU' ? `Аккаунт: @${targetUser}` : `Account: @${targetUser}`);
+        goToScreen('chats');
+    }
+
+    function openMidnightCustomModal(type, targetUser = null) {
+        midnightActiveModalType = type; midnightActiveModalTargetUser = targetUser;
+        const overlay = document.getElementById('midnight-modal-overlay-zone');
+        const title = document.getElementById('midnight-modal-title-text');
+        const field = document.getElementById('midnight-modal-input-field');
+        if(!overlay || !title || !field) return;
+        field.value = ''; const l = langData[currentLang];
+        if(type === 'name') { title.innerText = l.promptName; field.placeholder = globalUsers[currentLoggedUser].name; } 
+        else if(type === 'username') { title.innerText = l.promptUser; field.placeholder = currentLoggedUser; } 
+        else if(type === 'alias') { title.innerText = l.promptAlias; field.placeholder = "new_alias"; } 
+        else if(type === 'doubloons') { title.innerText = "Сколько дублонов начислить?"; field.placeholder = "100"; } 
+        else if(type === 'hub_rename') { title.innerText = l.promptHubName; field.placeholder = globalHubs[activeChatId]?.name || ""; }
+        overlay.style.display = 'flex'; field.focus();
+    }
+
+    function closeMidnightCustomModalAction() {
+        const overlay = document.getElementById('midnight-modal-overlay-zone'); if(overlay) overlay.style.display = 'none';
+        midnightActiveModalType = null; midnightActiveModalTargetUser = null;
+    }
+
+    async function submitMidnightCustomModalAction() {
+        const value = document.getElementById('midnight-modal-input-field').value.trim(); if(!value) { closeMidnightCustomModalAction(); return; }
+        const u = globalUsers[currentLoggedUser]; const l = langData[currentLang];
+        if(midnightActiveModalType === 'name') {
+            const oldName = u.name; u.name = value; saveDB(); await pushBaseToCloud(); updateMySettingsView();
+            addSystemLogMessage(`[PROFILE] Смена имени @${currentLoggedUser}: "${oldName}" ➡️ "${value}"`);
+        } else if(midnightActiveModalType === 'username') {
+            let clean = value.replace('@','').toLowerCase(); if(clean === currentLoggedUser) { closeMidnightCustomModalAction(); return; }
+            if(globalUsers[clean] || clean === "admin" || isUsernameTakenInSystem(clean)) { showToastNotification(l.toastUsernameTaken); closeMidnightCustomModalAction(); return; }
+            activeSessionsList = activeSessionsList.map(s => s === currentLoggedUser ? clean : s);
+            globalUsers[clean] = u; delete globalUsers[currentLoggedUser]; addSystemLogMessage(`[PROFILE] Ренейм профиля: @${currentLoggedUser} ➡️ @${clean}`);
+            currentLoggedUser = clean; saveDB(); await pushBaseToCloud(); updateMySettingsView();
+        } else if(midnightActiveModalType === 'alias') {
+            let target = midnightActiveModalTargetUser; let clean = value.replace('@','').toLowerCase();
+            if(clean && globalUsers[target]) { if(!globalUsers[target].aliases) globalUsers[target].aliases = []; if(!globalUsers[target].aliases.includes(clean)) { globalUsers[target].aliases.push(clean); addSystemLogMessage(`[ROOT] Добавлен алиас @${clean} для @${target}`); } saveDB(); await pushBaseToCloud(); listenToAdminUsers(); }
+        } else if(midnightActiveModalType === 'doubloons') {
+            let target = midnightActiveModalTargetUser; let count = parseInt(value);
+            if(!isNaN(count) && globalUsers[target]) { globalUsers[target].doubloons = (globalUsers[target].doubloons || 0) + count; addSystemLogMessage(`[ROOT] Начисление баланса: @${target} ➕ ${count} ⚓`); saveDB(); await pushBaseToCloud(); listenToAdminUsers(); }
+        } else if(midnightActiveModalType === 'hub_rename') {
+            if(globalHubs[activeChatId]) { const oldHubName = globalHubs[activeChatId].name; globalHubs[activeChatId].name = value; localStorage.setItem('midnight_hubs', JSON.stringify(globalHubs)); addSystemLogMessage(`[HUBS] Переименование Хаба: "${oldHubName}" ➡️ "${value}"`); saveDB(); await pushBaseToCloud(); openHubSettingsPanel(); }
+        }
+        closeMidnightCustomModalAction();
+    }
+    function updateMySettingsView() {
+        const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers; const u = liveUsers[currentLoggedUser]; if(!u) return;
+        let nameHtml = u.name;
+        if(u.isOwner) nameHtml += `<span class="badge-owner">👑</span>`; if(u.isVerified) nameHtml += `<span class="badge-verified">⚡</span>`;
+        if(u.isSponsor) nameHtml += `<span class="badge-sponsor">💎</span>`; if(u.isStaff) nameHtml += `<span class="badge-mod">🛡️</span>`; if(u.isBot) nameHtml += `<span class="badge-bot">🤖</span>`;
+        if(document.getElementById('my-profile-display-name')) document.getElementById('my-profile-display-name').innerHTML = nameHtml;
+        if(document.getElementById('my-profile-username')) document.getElementById('my-profile-username').innerText = '@' + currentLoggedUser;
+        const doubloonsRow = document.getElementById('my-profile-doubloons');
+        if(doubloonsRow) { if(currentLoggedUser === "admin") { doubloonsRow.style.display = 'block'; doubloonsRow.innerText = `⚓ ${u.doubloons || 0} Doubloons`; } else { doubloonsRow.style.display = 'none'; } }
+        const avaBox = document.getElementById('my-profile-avatar');
+        if(avaBox) { if(u.avatar) { avaBox.style.backgroundImage = `url('${u.avatar}')`; avaBox.innerText = ''; } else { avaBox.style.backgroundImage = 'none'; avaBox.innerText = u.name.substring(0,2).toUpperCase(); } }
+        if(document.getElementById('privacy-hide-online-checkbox')) document.getElementById('privacy-hide-online-checkbox').checked = u.hideOnline || false;
+
+        const multiContainer = document.getElementById('multi-account-profiles-list');
+        if(multiContainer) {
+            multiContainer.innerHTML = ''; if(!activeSessionsList.includes(currentLoggedUser)) activeSessionsList.push(currentLoggedUser);
+            activeSessionsList.forEach(sessionUser => {
+                const sUserData = liveUsers[sessionUser] || { name: sessionUser, avatar: "" }; const isCurrent = sessionUser === currentLoggedUser; const sAvaBg = sUserData.avatar ? `style="background-image: url('${sUserData.avatar}')"` : '';
+                multiContainer.innerHTML += `<div class="account-selector-row ${isCurrent ? 'current-active-profile' : ''}" onclick="executeSwitchActiveAccountSessionProfile('${sessionUser}')"><div class="account-meta-info"><div class="avatar" ${sAvaBg} style="width:32px; height:34px; margin-right:0; font-size:11px;">${sUserData.avatar ? '' : sUserData.name.substring(0,1).toUpperCase()}</div><span style="font-size:13px; font-weight:500; color:${isCurrent?'#fff':'#8e8e93'};">@${sessionUser}</span></div>${isCurrent ? '<div class="account-active-dot"></div>' : ''}</div>`;
+            });
+        }
+    }
+
+    function handleAvatarLocalUpload(input) {
+        const file = input.files; if(!file) return; const reader = new FileReader();
+        reader.onload = async function(e) { globalUsers[currentLoggedUser].avatar = e.target.result; saveDB(); await pushBaseToCloud(); updateMySettingsView(); addSystemLogMessage(`[PROFILE] Пользователь @${currentLoggedUser} обновил аватарку профиля.`); showToastNotification(currentLang === 'RU' ? "Аватарка обновлена!" : "Avatar updated!"); };
+        reader.readAsDataURL(file);
+    }
+
+    function editProfileField(field) { if(field === 'name') openMidnightCustomModal('name'); else if(field === 'username') openMidnightCustomModal('username'); }
+
+    // УЛЬТИМАТИВНЫЙ ИСПРАВЛЕННЫЙ СКВОЗНОЙ ПОИСК
+    async function handleGlobalSearch() {
+        const query = document.getElementById('search-input-field').value.trim().toLowerCase();
+        const container = document.getElementById('search-results-container'); if(!container) return;
+        container.innerHTML = ''; if(!query) return; // ПРИНУДИТЕЛЬНЫЙ СБРОС КОНТЕЙНЕРА ОТ ДУБЛИКАТОВ
+
+        await pullBaseFromCloud(); const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers; const liveHubs = JSON.parse(localStorage.getItem('midnight_hubs')) || globalHubs;
+        Object.keys(liveUsers).forEach(u => {
+            const user = liveUsers[u]; const hasAlias = user.aliases && user.aliases.some(a => a.includes(query));
+            if(u.includes(query) || user.name.toLowerCase().includes(query) || hasAlias) {
+                const avaBg = user.avatar ? `style="background-image: url('${user.avatar}')"` : ''; let badges = '';
+                if(user.isOwner) badges += `<span class="badge-owner">👑</span>`; if(user.isVerified) badges += `<span class="badge-verified">⚡</span>`;
+                if(user.isSponsor) badges += `<span class="badge-sponsor">💎</span>`; if(user.isStaff) badges += `<span class="badge-mod">🛡️</span>`;
+                container.innerHTML += `<div class="chat-item" onclick="viewUserProfileCard('${u}')"><div class="avatar" ${avaBg}>${user.avatar ? '' : user.name.substring(0,1).toUpperCase()}</div><div class="chat-info"><div class="chat-name">${user.name} ${badges}</div><div style="color:#6C63FF; font-size:12px;">@${u}</div></div></div>`;
+            }
+        });
+        Object.keys(liveHubs).forEach(h => {
+            const hub = liveHubs[h]; if(hub.privacy === "public" && (hub.name.toLowerCase().includes(query) || hub.user.includes(query))) {
+                container.innerHTML += `<div class="chat-item" onclick="startHubChat('${hub.id}')"><div class="avatar" style="background-color:rgba(0,255,102,0.1); color:#00FF66;">${hub.type === 'channel' ? '📢' : '👥'}</div><div class="chat-info"><div class="chat-name">${hub.name}</div><div style="color:#8e8e93; font-size:12px;">@hub_${hub.user}</div></div></div>`;
+            }
+        });
+    }
+
+    function startHubChat(hubId) { if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; userChats[currentLoggedUser][hubId] = { unreadCount: 0, isHub: true }; saveDB(); pushBaseToCloud(); openChat(hubId, globalHubs[hubId].name); }
+    function startChatFromProfile(username) { if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; userChats[currentLoggedUser][username] = { unreadCount: 0, isHub: false }; saveDB(); pushBaseToCloud(); openChat(username, globalUsers[username] ? globalUsers[username].name : username); }
+
+    async function viewUserProfileCard(username) {
+        await pullBaseFromCloud(); const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers; const u = liveUsers[username]; if(!u) return;
+        const avaBg = u.avatar ? `style="background-image: url('${u.avatar}')"` : ''; let badges = '';
+        if(u.isOwner) badges += `<span class="badge-owner">👑</span>`; if(u.isVerified) badges += `<span class="badge-verified">⚡</span>`;
+        if(u.isSponsor) badges += `<span class="badge-sponsor">💎</span>`; if(u.isStaff) badges += `<span class="badge-mod">🛡️</span>`;
+        const container = document.getElementById('userprofile-details-container');
+        if(container) { container.innerHTML = `<div class="profile-card"><div class="profile-avatar-big" ${avaBg}>${u.avatar ? '' : u.name.substring(0,2).toUpperCase()}</div><div class="profile-name">${u.name} ${badges}</div><div class="profile-username">@${username}</div></div><button class="btn" onclick="startChatFromProfile('${username}')" style="margin-bottom:10px;">💬 Написать сообщение</button><button class="btn" onclick="toggleBlacklistAction('${username}')" style="background-color:#ff3366;">Заблокировать / Разблокировать</button>`; }
+        goToScreen('userprofile');
+    }
+
+    async function toggleChannelSubscription() {
+        const hub = globalHubs[activeChatId]; if(!hub) return; if(!hub.members) hub.members = [];
+        if(hub.members.includes(currentLoggedUser)) { hub.members = hub.members.filter(m => m !== currentLoggedUser); if(userChats[currentLoggedUser]) delete userChats[currentLoggedUser][activeChatId]; } 
+        else { hub.members.push(currentLoggedUser); if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; userChats[currentLoggedUser][activeChatId] = { unreadCount: 0, isHub: true }; }
+        localStorage.setItem('midnight_hubs', JSON.stringify(globalHubs)); saveDB(); await pushBaseToCloud(); openChat(activeChatId, hub.name);
+    }
+    function openHubSettingsPanel() {
+        const hub = globalHubs[activeChatId]; if(!hub) return; const l = langData[currentLang];
+        let typeText = hub.type === 'channel' ? l.typeChannel : l.typeGroup; let pText = hub.privacy === 'public' ? 'ПУБЛИЧНЫЙ' : 'ПРИВАТНЫЙ';
+        let html = `<div class="profile-card"><div class="profile-avatar-big" style="background-color:rgba(108,99,255,0.1); color:#6C63FF;">${hub.type === 'channel' ? '📢' : '👥'}</div><div class="profile-name">${hub.name}</div><div class="profile-username">${typeText} (${pText}) | Creator: @${hub.creator}</div></div>`;
+        if(hub.creator === currentLoggedUser) { html += `<button class="btn" onclick="addMembersToHubStream()" style="background:#00FF66; color:#121214;">${l.addMemberText}</button><button class="btn" onclick="openMidnightCustomModal('hub_rename')" style="background:#1e1e24; color:#fff;">${l.renameHubText}</button>`; }
+        const container = document.getElementById('userprofile-details-container'); if(container) container.innerHTML = html; goToScreen('userprofile');
+    }
+
+    function addMembersToHubStream() {
+        const hub = globalHubs[activeChatId];
+        Object.keys(globalUsers).forEach(u => { if(!hub.members.includes(u)) { if(confirm(`Add @${u}?`)) { hub.members.push(u); if(!userChats[u]) userChats[u] = {}; userChats[u][hub.id] = { unreadCount: 1, isHub: true }; } } });
+        localStorage.setItem('midnight_hubs', JSON.stringify(globalHubs)); saveDB(); openHubSettingsPanel();
+    }
+
+    function renderMainChatsLayout() { if(currentLoggedUser === "admin" && founderActiveTab === 'users') listenToAllUsersFolder(); else listenToPersonalChats(); }
+    function switchFounderTab(tabName) { founderActiveTab = tabName; if(document.getElementById('tab-chats-btn')) document.getElementById('tab-chats-btn').className = 'tab-btn' + (tabName === 'chats' ? ' active' : ''); if(document.getElementById('tab-users-btn')) document.getElementById('tab-users-btn').className = 'tab-btn' + (tabName === 'users' ? ' active' : ''); renderMainChatsLayout(); }
+
+    function listenToPersonalChats() {
+        const container = document.getElementById('chats-list-container'); if(!container) return; container.innerHTML = '';
+        Object.keys(userChats[currentLoggedUser] || {}).forEach(chatId => {
+            const isHub = userChats[currentLoggedUser][chatId]?.isHub; let title = chatId; let avatarContent = chatId.substring(0,1).toUpperCase(); let style = ''; let badges = '';
+            if(isHub && globalHubs[chatId]) { title = globalHubs[chatId].name; avatarContent = globalHubs[chatId].type === 'channel' ? '📢' : '👥'; style = `style="background-color:rgba(108,99,255,0.1); color:#6C63FF;"`; }
+            else if(globalUsers[chatId]) { const u = globalUsers[chatId]; title = u.name; if(u.avatar) style = `style="background-image: url('${u.avatar}')"`; avatarContent = u.avatar ? '' : title.substring(0,1).toUpperCase(); if(u.isOwner) badges += `👑`; if(u.isVerified) badges += `⚡`; if(u.isSponsor) badges += `💎`; if(u.isStaff) badges += `🛡️`; }
+            const roomId = currentLoggedUser < chatId ? `${currentLoggedUser}_${chatId}` : `${chatId}_${currentLoggedUser}`; const list = globalMessages[isHub ? chatId : roomId] || [];
+            const lastMsg = list.length > 0 ? list[list.length - 1].text : 'No messages'; const count = userChats[currentLoggedUser][chatId]?.unreadCount || 0;
+            container.innerHTML += `<div class="chat-item" onclick="openChat('${chatId}', '${title}')"><div class="avatar" ${style}>${avatarContent}<div class="online-badge"></div></div><div class="chat-info"><div class="chat-meta-row"><span class="chat-name">${title} ${badges}</span></div><div class="chat-meta-row"><span class="chat-last-msg">${lastMsg}</span>${count > 0 ? `<div class="unread-badge">${count}</div>` : ''}</div></div></div>`;
+        });
+    }
+
+    function listenToAllUsersFolder() {
+        const container = document.getElementById('chats-list-container'); if(!container) return; container.innerHTML = '';
+        Object.keys(globalUsers).forEach(u => {
+            const user = globalUsers[u]; const avaBg = user.avatar ? `style="background-image: url('${user.avatar}')"` : ''; let badges = ''; if(user.isOwner) badges += `👑`; if(user.isVerified) badges += `⚡`; if(user.isSponsor) badges += `💎`; if(user.isStaff) badges += `🛡️`; if(user.isBot) badges += `🤖`;
+            container.innerHTML += `<div class="chat-item" onclick="viewUserProfileCard('${u}')"><div class="avatar" ${avaBg}>${user.avatar ? '' : user.name.substring(0,1).toUpperCase()}</div><div class="chat-info"><div class="chat-meta-row"><span class="chat-name">@${u} ${badges}</span></div></div></div>`;
+        });
+    }
+    async function openChat(id, name) {
+        activeChatId = id; 
+        const headerAva = document.getElementById('room-header-avatar');
+        if(headerAva) {
+            const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
+            const u = liveUsers[id];
+            if(u && u.avatar) { headerAva.style.backgroundImage = `url('${u.avatar}')`; headerAva.innerText = ''; }
+            else if(globalHubs[id]) { headerAva.style.backgroundImage = 'none'; headerAva.innerText = globalHubs[id].type === 'channel' ? '📢' : '👥'; headerAva.style.backgroundColor = 'rgba(108,99,255,0.1)'; }
+            else { headerAva.style.backgroundImage = 'none'; headerAva.innerText = name.substring(0,1).toUpperCase(); headerAva.style.backgroundColor = 'rgba(108,99,255,0.15)'; }
+        }
+
+        if(document.getElementById('room-title')) { document.getElementById('room-title').innerText = name; document.getElementById('room-title').onclick = globalHubs[id] ? openHubSettingsPanel : null; }
+        const inputPanel = document.getElementById('chat-input-action-panel'); const lockNotice = document.getElementById('channel-lock-notice'); const joinPanel = document.getElementById('chat-join-channel-panel'); const joinBtn = document.getElementById('channel-subscribe-action-btn'); const hub = globalHubs[id];
+        if (hub) {
+            if (!hub.members) hub.members = []; const isMember = hub.members.includes(currentLoggedUser);
+            if (!isMember) { if(inputPanel) inputPanel.style.display = 'none'; if(lockNotice) lockNotice.style.display = 'none'; if(joinPanel) joinPanel.style.display = 'flex'; if(joinBtn) joinBtn.innerText = currentLang === 'RU' ? 'ПОДПИСАТЬСЯ НА ХАБ' : 'SUBSCRIBE TO HUB'; } 
+            else { if (hub.type === 'channel' && hub.creator !== currentLoggedUser) { if(inputPanel) inputPanel.style.display = 'none'; if(lockNotice) lockNotice.style.display = 'block'; if(joinPanel) joinPanel.style.display = 'none'; } else { if(inputPanel) inputPanel.style.display = 'flex'; if(lockNotice) lockNotice.style.display = 'none'; if(joinPanel) joinPanel.style.display = 'none'; } }
+        } else { if(inputPanel) inputPanel.style.display = 'flex'; if(lockNotice) lockNotice.style.display = 'none'; if(joinPanel) joinPanel.style.display = 'none'; }
+        if(userChats[currentLoggedUser] && userChats[currentLoggedUser][id]) { userChats[currentLoggedUser][id].unreadCount = 0; saveDB(); }
+        goToScreen('room'); closeContextMenu(); await pullBaseFromCloud(); renderMessages(); renderPinnedBannerView();
+    }
+
+    function openProfileDirectlyFromCurrentChatStream() {
+        if(activeChatId && !globalHubs[activeChatId]) { viewUserProfileCard(activeChatId); }
+        else if(activeChatId && globalHubs[activeChatId]) { openHubSettingsPanel(); }
+    }
+
+    function renderPinnedBannerView() {
+        const banner = document.getElementById('chat-room-pinned-banner'); const bannerText = document.getElementById('chat-room-pinned-text'); if(!banner || !bannerText) return;
+        const isHub = globalHubs[activeChatId] ? true : false; const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId;
+        const hub = globalHubs[activeChatId]; const currentPinnedId = hub ? hub.pinnedMsgId : userChats[currentLoggedUser]?.[activeChatId]?.pinnedMsgId;
+        if(currentPinnedId) { const list = globalMessages[targetRoom] || []; const foundMsg = list.find(m => m.id === currentPinnedId); if(foundMsg) { banner.style.display = 'flex'; bannerText.innerText = `📌 ${foundMsg.sender}: ${foundMsg.text}`; return; } }
+        banner.style.display = 'none';
+    }
+    function renderMessages() {
+        const container = document.getElementById('messages-container'); if(!container) return; container.innerHTML = '';
+        const isHub = globalHubs[activeChatId] ? true : false; const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId; const list = globalMessages[targetRoom] || [];
+        const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
+        
+        list.forEach(m => {
+            const isMe = m.sender === currentLoggedUser; const u = liveUsers[m.sender] || { isVerified: false, isSponsor: false, isOwner: false, isStaff: false, isBot: false, name: m.sender, avatar: "" };
+            let vipClass = u.isSponsor ? 'vip-sponsor' : u.isVerified ? 'vip-verified' : ''; let ticks = isMe ? `✓✓` : ''; let fileContent = '';
+            if(m.fileData) { if(m.fileType.startsWith('image/')) fileContent = `<img src="${m.fileData}">`; else fileContent = `<a class="file-attach-link" href="${m.fileData}" download="${m.fileName}">📎 ${m.fileName}</a>`; }
+            let badges = ''; if(u.isOwner) badges += `👑`; if(u.isVerified) badges += `⚡`; if(u.isSponsor) badges += `💎`; if(u.isStaff) badges += `🛡️`; if(u.isBot) badges += `🤖`;
+            
+            const mAvaBg = u.avatar ? `style="background-image: url('${u.avatar}')"` : '';
+            const avatarHtmlHtml = `<div class="message-avatar" ${mAvaBg} onclick="viewUserProfileCard('${m.sender}')">${u.avatar ? '' : u.name.substring(0,1).toUpperCase()}</div>`;
+            
+            container.innerHTML += `
+                <div class="message-wrapper ${isMe ? 'outgoing-row' : ''}">
+                    ${avatarHtmlHtml}
+                    <div class="message ${isMe ? 'outgoing' : 'incoming'} ${vipClass}" onclick="openMessageActionsMenuAction(event, '${targetRoom}', '${m.id}')">
+                        <div style="font-size:11px; color:#6C63FF; margin-bottom:2px; font-weight:600; cursor:pointer;" onclick="event.stopPropagation(); viewUserProfileCard('${m.sender}')">@${m.sender} ${badges}</div>
+                        <div>${m.text}</div>
+                        ${fileContent}
+                        <div class="msg-meta"><span class="message-time">${m.time}</span> ${ticks}</div>
+                    </div>
+                </div>`;
+        }); container.scrollTop = container.scrollHeight;
+    }
+
+    // КРИТИЧЕСКИЙ ФИКС ЗАЩИТЫ КАНАЛОВ И ХАБОВ ОТ ПОСТОРОННИХ ЗАКРЕПОВ
+    function openMessageActionsMenuAction(event, targetRoom, msgId) {
+        event.stopPropagation(); 
+        const hub = globalHubs[activeChatId];
+        
+        // Пользователь имеет права управления, если это личная переписка ИЛИ он создатель хаба ИЛИ он admin сети
+        const hasAdminRights = !hub ? true : (hub.creator === currentLoggedUser || currentLoggedUser === 'admin');
+        
+        let html = `<div class="context-menu" id="message-context-menu" style="display:block; top:${event.clientY - 20}px; left:${event.clientX - 30}px; position:fixed; z-index:99999;">`;
+        
+        // СТРОГАЯ ПРОВЕРКА: обычные подписчики видят ТОЛЬКО кнопку "Удалить у себя"
+        if(hasAdminRights) {
+            html += `<div class="context-item" onclick="executePinMessageLogic('${targetRoom}', '${msgId}')">📌 Закрепить</div>`;
+        }
+        
+        html += `<div class="context-item" onclick="executeDeleteSingleMessageLogic('${targetRoom}', '${msgId}', 'me')">❌ У себя</div>`;
+        
+        if(hasAdminRights) { 
+            html += `<div class="context-item" onclick="executeDeleteSingleMessageLogic('${targetRoom}', '${msgId}', 'all')" style="color:#ff3366;">💥 Для всех</div>`; 
+        }
+        
+        html += `</div>`;
+        const oldMenu = document.getElementById('message-context-menu'); if(oldMenu) oldMenu.remove(); document.body.insertAdjacentHTML('beforeend', html);
+    }
+
+    async function executePinMessageLogic(targetRoom, msgId) {
+        const hub = globalHubs[activeChatId];
+        // Дополнительная проверка безопасности на уровне функции
+        if(hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') {
+            return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied');
+        }
+        if(hub) { hub.pinnedMsgId = msgId; } 
+        else { if(!userChats[currentLoggedUser][activeChatId]) userChats[currentLoggedUser][activeChatId] = { unreadCount: 0, isHub: false }; userChats[currentLoggedUser][activeChatId].pinnedMsgId = msgId; }
+        saveDB(); await pushBaseToCloud(); closeContextMenu(); renderPinnedBannerView();
+    }
+
+    async function executeDeleteSingleMessageLogic(targetRoom, msgId, mode) {
+        const hub = globalHubs[activeChatId];
+        if(mode === 'all' && hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') {
+            return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied');
+        }
+        if(globalMessages[targetRoom]) {
+            if(mode === 'all') { globalMessages[targetRoom] = globalMessages[targetRoom].filter(m => m.id !== msgId); } 
+            else { globalMessages[targetRoom] = globalMessages[targetRoom].filter(m => m.id !== msgId || m.sender !== currentLoggedUser); }
+            saveDB(); await pushBaseToCloud(); closeContextMenu(); renderMessages(); renderPinnedBannerView();
+        }
+    }
+
+    function scrollToPinnedMessageAction() { showToastNotification(currentLang==='RU'?'Переход к закреплённому сообщению':'Scrolling to pin'); }
+    
+    async function unpinMessageInRoomAction(event) {
+        event.stopPropagation(); const hub = globalHubs[activeChatId]; 
+        if(hub && hub.creator !== currentLoggedUser && currentLoggedUser !== 'admin') {
+            return showToastNotification(currentLang === 'RU' ? 'Доступ запрещен' : 'Access denied');
+        }
+        if(hub) hub.pinnedMsgId = null;
+        else if(userChats[currentLoggedUser]?.[activeChatId]) userChats[currentLoggedUser][activeChatId].pinnedMsgId = null;
+        saveDB(); await pushBaseToCloud(); renderPinnedBannerView();
+    }
+
+    function handleTypingIndicatorSignalAction() { localStorage.setItem('midnight_typing_ping', JSON.stringify({ room: activeChatId, sender: currentLoggedUser, rand: Math.random() })); }
+    function handleChatFileUpload(input) { 
+        const file = input.files; if(!file || !activeChatId) return; const reader = new FileReader(); 
+        reader.onload = function(e) { sendMediaMessage(file.name, file.type, e.target.result); }; reader.readAsDataURL(file); 
+    }
+    
+    async function sendMediaMessage(fileName, fileType, fileData) { 
+        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); const isHub = globalHubs[activeChatId] ? true : false; 
+        const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId; const msgId = 'msg_' + Math.random().toString(36).substring(2, 9);
+        if(!globalMessages[targetRoom]) globalMessages[targetRoom] = []; globalMessages[targetRoom].push({ id: msgId, text: `📎 ${fileName}`, sender: currentLoggedUser, time: time, fileData: fileData, fileType: fileType, fileName: fileName, delivered: true, seen: false }); 
+        saveDB(); await pushBaseToCloud(); renderMessages(); renderMainChatsLayout(); 
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('message-input'); const text = input.value.trim(); if(!text || !activeChatId) return;
+        const isHub = globalHubs[activeChatId] ? true : false; const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = isHub ? activeChatId : roomId; const msgId = 'msg_' + Math.random().toString(36).substring(2, 9);
+        if(!globalMessages[targetRoom]) globalMessages[targetRoom] = []; globalMessages[targetRoom].push({ id: msgId, text: text, sender: currentLoggedUser, time: time, delivered: true, seen: false });
+        input.value = ''; saveDB(); await pushBaseToCloud(); renderMessages(); renderMainChatsLayout();
+    }
+
+    function deleteChatAction(mode) { 
+        const roomId = currentLoggedUser < activeChatId ? `${currentLoggedUser}_${activeChatId}` : `${activeChatId}_${currentLoggedUser}`; const targetRoom = globalHubs[activeChatId] ? activeChatId : roomId; 
+        globalMessages[targetRoom] = []; saveDB(); pushBaseToCloud(); renderMessages(); closeContextMenu(); renderMainChatsLayout(); 
+    }
+    
+    function toggleBlacklistAction(username) { if(!globalUsers[currentLoggedUser].blacklist) globalUsers[currentLoggedUser].blacklist = {}; if(globalUsers[currentLoggedUser].blacklist[username]) delete globalUsers[currentLoggedUser].blacklist[username]; else globalUsers[currentLoggedUser].blacklist[username] = true; saveDB(); pushBaseToCloud(); viewUserProfileCard(username); }
+    function updatePrivacyOnServer() { globalUsers[currentLoggedUser].hideOnline = document.getElementById('privacy-hide-online-checkbox').checked; saveDB(); pushBaseToCloud(); }
+
+    async function listenToAdminUsers() {
+        const container = document.getElementById('admin-users-container'); if(!container) return; container.innerHTML = '';
+        await pullBaseFromCloud(); const liveUsers = JSON.parse(localStorage.getItem('midnight_users')) || globalUsers;
+        
+        Object.keys(liveUsers).forEach(u => {
+            const user = liveUsers[u]; const avaBg = user.avatar ? `style="background-image: url('${user.avatar}')"` : '';
+            let badges = ''; if(user.isOwner) badges += `👑`; if(user.isVerified) badges += `⚡`; if(user.isSponsor) badges += `💎`; if(user.isStaff) badges += `🛡️`; if(user.isBot) badges += `🤖`;
+            let aliasHtml = '';
+            if(user.aliases && user.aliases.length > 0) {
+                aliasHtml += `<div class="admin-alias-manager-box">`;
+                user.aliases.forEach(a => { aliasHtml += `<div class="admin-alias-badge-item"><span>@${a}</span><span class="admin-alias-delete-x" onclick="deleteAdminAliasAction('${u}', '${a}')">✕</span></div>`; });
+                aliasHtml += `</div>`;
+            }
+            container.innerHTML += `
+                <div class="admin-user-row">
+                    <div class="admin-user-card-top">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="avatar" ${avaBg} style="width:34px; height:34px; margin-right:0; font-size:12px;">${user.avatar ? '' : user.name.substring(0,1).toUpperCase()}</div>
+                            <div class="admin-user-card-meta">
+                                <span style="font-size:13px; font-weight:600;">@${u} ${badges}</span>
+                                <span style="font-size:11px; color:#00FF66;">⚓ ${user.doubloons || 0} | ${user.banned ? '🔴 BAN' : '🟢 OK'}</span>
+                            </div>
+                        </div>
+                        <button class="admin-manage-trigger-btn" onclick="openAdminUserContextMenuPopupStream(event, '${u}')">⚙️ УПРАВЛЕНИЕ</button>
+                    </div>
+                    ${aliasHtml}
+                </div>`;
+        });
+        document.getElementById('stat-total-users').innerText = Object.keys(liveUsers).length;
+        document.getElementById('stat-banned-users').innerText = Object.keys(liveUsers).filter(u => liveUsers[u].banned).length;
+    }
+    function openAdminUserContextMenuPopupStream(event, targetUser) {
+        event.stopPropagation(); closeContextMenu();
+        const isBanned = globalUsers[targetUser].banned;
+        let html = `<div class="context-menu" id="admin-actions-context-popup" style="display:block; position:fixed; top:${event.clientY - 40}px; left:${event.clientX - 140}px; width:185px; z-index:9999999; max-height:280px; overflow-y:auto; box-shadow: 0 10px 25px rgba(0,0,0,0.5), 0 0 15px rgba(108,99,255,0.25);">`;
+        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'O')">👑 Основатель: ${globalUsers[targetUser].isOwner?'ВЫКЛ':'ДАТЬ'}</div>`;
+        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'V')">⚡ Верификация: ${globalUsers[targetUser].isVerified?'ВЫКЛ':'ДАТЬ'}</div>`;
+        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'S')">💎 Спонсор: ${globalUsers[targetUser].isSponsor?'ВЫКЛ':'ДАТЬ'}</div>`;
+        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'M')">🛡️ Модератор: ${globalUsers[targetUser].isStaff?'ВЫКЛ':'ДАТЬ'}</div>`;
+        html += `<div class="context-item" onclick="toggleAdminBadge('${targetUser}', 'B')">🤖 Робот: ${globalUsers[targetUser].isBot?'ВЫКЛ':'ДАТЬ'}</div>`;
+        html += `<div class="context-item" onclick="openMidnightCustomModal('alias', '${targetUser}')">➕ Добавить @алиас</div>`;
+        html += `<div class="context-item" onclick="openMidnightCustomModal('doubloons', '${targetUser}')" style="color:#00FF66;">⚓ Начислить дублоны</div>`;
+        html += `<div class="context-item" onclick="toggleBan('${targetUser}')" style="color:#ff3366; font-weight:700;">${isBanned ? '🟢 РАЗБАНИТЬ' : '🔴 ЗАБАНИТЬ'}</div>`;
+        html += `</div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+    }
+
+    async function toggleAdminBadge(username, type) { 
+        if(type === 'O') globalUsers[username].isOwner = !globalUsers[username].isOwner; if(type === 'V') globalUsers[username].isVerified = !globalUsers[username].isVerified; 
+        if(type === 'S') globalUsers[username].isSponsor = !globalUsers[username].isSponsor; if(type === 'M') globalUsers[username].isStaff = !globalUsers[username].isStaff; 
+        if(type === 'B') globalUsers[username].isBot = !globalUsers[username].isBot; 
+        saveDB(); await pushBaseToCloud(); listenToAdminUsers(); 
+    }
+    async function toggleBan(username) { globalUsers[username].banned = !globalUsers[username].banned; addSystemLogMessage(`[ROOT] Статус блокировки @${username} изменен.`); saveDB(); await pushBaseToCloud(); listenToAdminUsers(); }
+    async function wipeAllMessages() { if(confirm("Wipe all system messages?")) { globalMessages = {}; addSystemLogMessage("[ROOT] Принудительная очистка всей истории сообщений сети."); saveDB(); await pushBaseToCloud(); renderMessages(); } }
+    async function deleteAdminAliasAction(username, aliasToDelete) { if(globalUsers[username] && globalUsers[username].aliases) { globalUsers[username].aliases = globalUsers[username].aliases.filter(a => a !== aliasToDelete); saveDB(); await pushBaseToCloud(); listenToAdminUsers(); showToastNotification(currentLang === 'RU' ? 'Юзернейм успешно удален' : 'Alias removed successfully'); } }
+
+    window.addEventListener('storage', function(e) {
+        if(e.key === 'midnight_typing_ping' && e.newValue) {
+            const data = JSON.parse(e.newValue);
+            if(data.room === activeChatId && data.sender !== currentLoggedUser) {
+                const statusLabel = document.getElementById('chat-room-typing-status');
+                if(statusLabel) {
+                    statusLabel.innerText = `@${data.sender} typing...`; statusLabel.style.display = 'block';
+                    if(window.typingTimeoutRef) clearTimeout(window.typingTimeoutRef); window.typingTimeoutRef = setTimeout(() => { statusLabel.style.display = 'none'; }, 2000);
+                }
+            }
+        }
+    });
+
+    async function executeCreateHubLogic() {
+        const l = langData[currentLang]; const name = document.getElementById('hub-name-input').value.trim(); if(!name) return showToastNotification(l.alertFill);
+        const privacy = document.getElementById('hub-privacy-select').value; let hubUser = "";
+        if(privacy === 'public') { const uInput = document.getElementById('hub-user-link-input').value.trim().replace('@','').toLowerCase(); if(!uInput) return showToastNotification(l.alertFill); if(uInput === "admin" || isUsernameTakenInSystem(uInput)) return showToastNotification(l.alertHubExist); hubUser = uInput; }
+        const id = 'hub_' + Math.random().toString(36).substring(2, 9); globalHubs[id] = { id: id, name: name, type: hubCreationTypeHolder, privacy: privacy, user: hubUser, creator: currentLoggedUser, avatar: "", members: [currentLoggedUser], pinnedMsgId: null };
+        localStorage.setItem('midnight_hubs', JSON.stringify(globalHubs)); if(!userChats[currentLoggedUser]) userChats[currentLoggedUser] = {}; userChats[currentLoggedUser][id] = { unreadCount: 0, isHub: true }; addSystemLogMessage(`[HUBS] Успешно создан новый хаб "${name}"`); saveDB(); await pushBaseToCloud(); goToScreen('chats');
+    }
+
+    function toggleHubPrivacyFormRow() { const privacy = document.getElementById('hub-privacy-select').value; if(document.getElementById('hub-username-row')) document.getElementById('hub-username-row').style.display = privacy === 'public' ? 'block' : 'none'; }
+
+    setInterval(async () => { if (currentLoggedUser && activeChatId) { await pullBaseFromCloud(); renderMessages(); renderMainChatsLayout(); } }, 3000);
+
+    updateLocalization(); 
+    saveDB();
+</script>
+</body>
+</html>
